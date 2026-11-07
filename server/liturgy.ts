@@ -1,4 +1,4 @@
-import { HttpError, TtlCache, cdn, fetchWithTimeout, htmlToText, json, assertDate } from './http';
+import { HttpError, TtlCache, cdn, fetchWithTimeout, htmlToText, json, assertDate } from './http.js';
 
 export interface Reading { key: 'FR' | 'PS' | 'SR' | 'GSP'; label: string; reference: string; text: string; }
 export interface Liturgy {

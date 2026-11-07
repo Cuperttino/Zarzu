@@ -1,5 +1,5 @@
 // Función única de Vercel: todas las rutas /api/* llegan aquí mediante la reescritura de vercel.json.
-import { route } from '../server/router';
+import { route } from '../server/router.js';
 async function handle(req: Request): Promise<Response> {
   const url = new URL(req.url);
   const sub = url.searchParams.get('__path');

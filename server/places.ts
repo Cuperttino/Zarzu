@@ -1,4 +1,4 @@
-import { HttpError, TtlCache, cdn, env, fetchWithTimeout, json, contactUrl, normalize } from './http';
+import { HttpError, TtlCache, cdn, env, fetchWithTimeout, json, contactUrl, normalize } from './http.js';
 
 export type PlaceKind = 'catedral' | 'basilica' | 'santuario' | 'monasterio' | 'convento' | 'parroquia' | 'ermita' | 'iglesia';
 export interface ScheduleInfo { status: 'verified' | 'community' | 'unavailable'; text: string | null; sourceUrl: string | null; sourceName: string | null; checkedOn: string | null; }

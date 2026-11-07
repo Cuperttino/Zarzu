@@ -1,9 +1,9 @@
-import { HttpError, cdn, env, json, fetchWithTimeout } from './http';
-import { liturgyRoute } from './liturgy';
-import { newsRoute, FEEDS } from './news';
-import { geocodeRoute, placesRoute } from './places';
-import { aiEnabled, chatRoute, insightRoute } from './ai';
-import { cronRoute } from './push';
+import { HttpError, cdn, env, json, fetchWithTimeout } from './http.js';
+import { liturgyRoute } from './liturgy.js';
+import { newsRoute, FEEDS } from './news.js';
+import { geocodeRoute, placesRoute } from './places.js';
+import { aiEnabled, chatRoute, insightRoute } from './ai.js';
+import { cronRoute } from './push.js';
 
 function configRoute(): Response {
   return json({

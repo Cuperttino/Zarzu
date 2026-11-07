@@ -1,7 +1,7 @@
 // Web Push (RFC 8291 + RFC 8292) con node:crypto, sin dependencias.
 import crypto from 'node:crypto';
-import { HttpError, env, fetchWithTimeout, json } from './http';
-import { getLiturgy } from './liturgy';
+import { HttpError, env, fetchWithTimeout, json } from './http.js';
+import { getLiturgy } from './liturgy.js';
 
 const b64u = (b: Buffer | Uint8Array) => Buffer.from(b).toString('base64url');
 const fromB64u = (s: string) => Buffer.from(s, 'base64url');

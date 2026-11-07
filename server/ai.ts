@@ -1,5 +1,5 @@
-import { HttpError, TtlCache, cdn, clientIp, env, fetchWithTimeout, json, softRateLimit, assertDate } from './http';
-import { getLiturgy } from './liturgy';
+import { HttpError, TtlCache, cdn, clientIp, env, fetchWithTimeout, json, softRateLimit, assertDate } from './http.js';
+import { getLiturgy } from './liturgy.js';
 
 export const SYSTEM_PROMPT = `Eres el guía espiritual de Zarzu, una aplicación católica. Acompañas a las personas en su fe con calidez, rigor y sencillez, siempre en español salvo que te escriban en otro idioma.
 

@@ -1,4 +1,4 @@
-import { decodeEntities, htmlToText } from './http';
+import { decodeEntities, htmlToText } from './http.js';
 
 export interface RawItem { title: string; link: string; summary: string; date: string | null; image: string | null; categories: string[]; }
 

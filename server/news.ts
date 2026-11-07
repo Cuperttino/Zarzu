@@ -1,5 +1,5 @@
-import { TtlCache, cdn, env, fetchWithTimeout, json, normalize } from './http';
-import { RawItem, ogImage, parseFeed } from './rss';
+import { TtlCache, cdn, env, fetchWithTimeout, json, normalize } from './http.js';
+import { type RawItem, ogImage, parseFeed } from './rss.js';
 
 export const CATEGORIES = ['vaticano', 'papa', 'espana', 'diocesis', 'semana-santa', 'cofradias', 'santos', 'internacional', 'cultura'] as const;
 export type Category = (typeof CATEGORIES)[number];
