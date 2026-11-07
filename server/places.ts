@@ -7,7 +7,7 @@ export interface Place {
   photo: string | null; openingHours: string | null; mass: ScheduleInfo; confession: ScheduleInfo; opening: ScheduleInfo; osmUrl: string;
 }
 
-const MIRRORS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter', 'https://overpass.private.coffee/api/interpreter'];
+const MIRRORS = ['https://overpass-api.de/api/interpreter', 'https://overpass.private.coffee/api/interpreter', 'https://overpass.openstreetmap.fr/api/interpreter', 'https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
 
 export function classifyPlace(tags: Record<string, string>): PlaceKind {
   const n = normalize(`${tags.name ?? ''} ${tags.alt_name ?? ''}`);
@@ -93,18 +93,21 @@ export async function placesRoute(url: URL): Promise<Response> {
   const key = `${lat.toFixed(3)},${lon.toFixed(3)},${radius}`;
   let places = placeCache.get(key);
   if (!places) {
-    const body = new URLSearchParams({ data: overpassQuery(+lat.toFixed(4), +lon.toFixed(4), radius) });
-    let lastError = '';
-    for (const m of MIRRORS) {
+    const body = new URLSearchParams({ data: overpassQuery(+lat.toFixed(4), +lon.toFixed(4), radius) }).toString();
+    // Se consulta a todos los servidores a la vez y se usa la primera respuesta válida.
+    const errors: string[] = [];
+    const ask = async (m: string) => {
       try {
-        const res = await fetchWithTimeout(m, { method: 'POST', body, timeoutMs: 22000, headers: { 'content-type': 'application/x-www-form-urlencoded' } });
-        if (!res.ok) { lastError = String(res.status); continue; }
+        const res = await fetchWithTimeout(m, { method: 'POST', body, timeoutMs: 25000, headers: { 'content-type': 'application/x-www-form-urlencoded', accept: 'application/json' } });
+        if (!res.ok) throw new Error(String(res.status));
         const data = await res.json() as { elements?: Parameters<typeof toPlace>[0][] };
-        places = (data.elements ?? []).map(toPlace).filter((p): p is Place => !!p);
-        break;
-      } catch (e) { lastError = (e as Error).message; }
-    }
-    if (!places) throw new HttpError(502, `El servicio de mapas no responde (${lastError}). Vuelve a intentarlo en un momento.`, 'overpass_unavailable');
+        if (!Array.isArray(data.elements)) throw new Error('respuesta sin datos');
+        return data.elements.map(toPlace).filter((p): p is Place => !!p);
+      } catch (e) { errors.push(`${new URL(m).host}: ${(e as Error).message}`); throw e; }
+    };
+    try { places = await Promise.any(MIRRORS.map(ask)); }
+    catch { throw new HttpError(502, 'El servicio de mapas no responde ahora mismo. Vuelve a intentarlo en un momento.', 'overpass_unavailable'); }
+    finally { if (errors.length) console.warn('overpass', errors.join(' | ')); }
     placeCache.set(key, places);
   }
   const copy = structuredClone(places);

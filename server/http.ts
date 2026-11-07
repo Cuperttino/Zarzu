@@ -1,5 +1,5 @@
 export const env = (k: string, d = ''): string => (process.env[k] ?? d).trim();
-export const contactUrl = () => env('CONTACT_URL', 'https://github.com');
+export const contactUrl = () => env('CONTACT_URL', 'https://github.com/Cuperttino/Zarzu');
 export const userAgent = () => `ZarzuApp/1.0 (+${contactUrl()})`;
 
 export class HttpError extends Error {

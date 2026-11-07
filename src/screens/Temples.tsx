@@ -24,7 +24,8 @@ export async function geocode(q: string): Promise<Geo[]> {
 export async function places(lat: number, lon: number, radiusKm: number): Promise<Place[]> {
   try { return (await api<{ places: Place[] }>(`/api/places?lat=${lat}&lon=${lon}&radius=${radiusKm * 1000}`)).places; }
   catch (e) {
-    if ((e as ApiError).code !== 'preview') throw e;
+    if ((e as ApiError).code !== 'preview' && (e as ApiError).code !== 'overpass_unavailable') throw e;
+    // Si el servidor no llega al mapa, se prueba desde el propio dispositivo.
     const r = await fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: new URLSearchParams({ data: overpassQuery(lat, lon, radiusKm * 1000) }) }).catch(() => { throw new Error(PREVIEW_MAP); });
     if (!r.ok) throw new Error('El servicio de mapas no responde.');
     return ((await r.json()).elements as Parameters<typeof toPlace>[0][]).map(toPlace).filter((p): p is Place => !!p);
