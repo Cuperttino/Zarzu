@@ -1,0 +1,11 @@
+# Lanza los recordatorios cada 15 minutos (el plan gratuito de Vercel solo admite cron diario).
+# Crea en GitHub > Settings > Secrets > Actions: APP_URL (https://tu-dominio) y CRON_SECRET.
+name: Recordatorios
+on:
+  schedule: [{ cron: '*/15 * * * *' }]
+  workflow_dispatch:
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -fsS -m 50 -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" "${{ secrets.APP_URL }}/api/cron/reminders"

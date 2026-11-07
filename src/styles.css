@@ -1,0 +1,68 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Zarzu: colores claros (lila, blanco y amarillo), la llama como logo y letra grotesca con carácter. */
+@font-face { font-family: Bricolage; src: url('/fonts/Bricolage.woff') format('woff'); font-weight: 400 800; font-display: swap; }
+@font-face { font-family: Lectura; src: url('/fonts/CrimsonPro-Regular.woff') format('woff'); font-weight: 400 800; font-display: swap; }
+
+:root {
+  --paper: #fbf9ff; --surface: #f3eeff; --sand: #e7deff; --line: #ece6fa;
+  --ink: #1e1640; --muted: #6d6690; --gold: #5b2ee0; --pop: #7048f5; --sun: #ffd447; --flame: #ffb81c;
+  --hero: linear-gradient(165deg, #e9e0ff 0%, #f5f0ff 55%, #fff3cc 100%); --tile-lila: #ebe3ff; --tile-sol: #fff1bf;
+  --gold-soft: var(--ink); --pop-ink: #1e1640; --navy: var(--pop); --on-navy: #fff; --on-navy-muted: var(--muted);
+  --lit: var(--gold); --on-lit: #fff; --danger: #c81e1e; --ok: #15803d; --warn: #a16207; --reading-scale: 1;
+}
+.dark {
+  --paper: #120828; --surface: #21123f; --sand: #2e1b54; --line: #2e1b54;
+  --ink: #ffffff; --muted: #b3a8d1; --gold: #ffd447; --pop: #7048f5; --danger: #f87171; --ok: #4ade80; --warn: #facc15;
+  --hero: linear-gradient(165deg, #2c1a5c 0%, #1b0f3a 100%); --tile-lila: #2e1b5c; --tile-sol: #3a3012;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-paper: var(--paper); --color-surface: var(--surface); --color-sand: var(--sand); --color-line: var(--line); --color-ink: var(--ink); --color-muted: var(--muted);
+  --color-gold: var(--gold); --color-gold-soft: var(--gold-soft); --color-navy: var(--navy); --color-on-navy: var(--on-navy); --color-on-navy-muted: var(--on-navy-muted);
+  --color-lit: var(--lit); --color-on-lit: var(--on-lit); --color-danger: var(--danger); --color-ok: var(--ok); --color-warn: var(--warn); --color-pop-ink: var(--pop-ink); --color-pop: var(--pop); --color-sun: var(--sun); --color-flame: var(--flame);
+  --font-serif: Bricolage, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+  --font-sans: Bricolage, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+}
+
+html { -webkit-text-size-adjust: 100%; }
+html, body { background: var(--paper); color: var(--ink); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+body { min-height: 100dvh; overflow-x: hidden; }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 8px; }
+button { cursor: pointer; }
+@layer base { h1, h2, h3 { font-family: var(--font-serif); font-weight: 800; letter-spacing: -.025em; text-wrap: balance; } }
+.font-serif { font-weight: 800; letter-spacing: -.02em; }
+.reading { font-family: Lectura, Georgia, serif; font-size: calc(1.27rem * var(--reading-scale)); line-height: 1.48; }
+.reading p + p { margin-top: .85em; }
+.safe-b { padding-bottom: env(safe-area-inset-bottom); }
+.safe-t { padding-top: calc(env(safe-area-inset-top) + .5rem); }
+.no-bar { scrollbar-width: none; } .no-bar::-webkit-scrollbar { display: none; }
+
+/* Burbuja redonda de cada icono. */
+.niche { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 999px; background: var(--paper); }
+.c-ink .niche, .c-sun .niche { background: var(--paper); color: var(--gold); }
+
+.c-ink { background: var(--tile-lila) !important; color: var(--ink) !important; }
+.c-sun { background: var(--tile-sol) !important; color: var(--ink) !important; }
+.soft-hero { background: var(--hero); color: var(--ink); }
+
+/* Radar de misas: un barrido que gira y un pulso en las misas que empiezan pronto. */
+.radar-sweep { background: conic-gradient(from 0deg, transparent 0 78%, color-mix(in srgb, var(--pop) 28%, transparent) 100%); animation: sweep 3.6s linear infinite; }
+@keyframes sweep { to { transform: rotate(360deg); } }
+.radar-ping { transform-box: fill-box; transform-origin: center; animation: ping 1.8s ease-out infinite; }
+@keyframes ping { from { transform: scale(1); opacity: .55; } to { transform: scale(3); opacity: 0; } }
+.press { transition: transform .16s ease, opacity .16s ease; } .press:active { transform: scale(.97); opacity: .85; }
+
+.screen { animation: enter .28s ease; }
+@keyframes enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.sheet { animation: sheet .3s cubic-bezier(.2,.9,.2,1); }
+@keyframes sheet { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+.slide { animation: slide .36s cubic-bezier(.2,.8,.2,1); }
+@keyframes slide { from { opacity: 0; transform: translateX(18px); } to { opacity: 1; transform: none; } }
+.pop { animation: pop .3s cubic-bezier(.3,1.5,.5,1); }
+@keyframes pop { from { transform: scale(.85); opacity: 0; } to { transform: none; opacity: 1; } }
+.pulse-soft { animation: pulse 1.6s ease-in-out infinite; } @keyframes pulse { 50% { opacity: .45; } }
+.bead { transition: transform .2s cubic-bezier(.3,1.7,.5,1), fill .15s; transform-box: fill-box; transform-origin: center; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }

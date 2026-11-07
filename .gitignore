@@ -1,0 +1,11 @@
+node_modules
+dist
+dist-preview
+.env
+.env.local
+.vercel
+.tmp-server.mjs
+.tmp-tests
+*.log
+.DS_Store
+.e2e/shots
