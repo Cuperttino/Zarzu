@@ -26,9 +26,16 @@ async function ctx(browser, opts = {}) {
         const f = (d) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
         const d0 = f(new Date()), d1 = f(new Date(Date.now() + 86400000));
         const soon = new Date(Date.now() + 40 * 60000), hm = `${String(soon.getHours()).padStart(2, '0')}:${String(soon.getMinutes()).padStart(2, '0')}`;
+        if (u.searchParams.get('kind') === 'adorations') {
+          const h0 = new Date(Date.now() - 30 * 60000), h1 = new Date(Date.now() + 60 * 60000), f2 = (d) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+          return r.fulfill({ json: { kind: 'adorations', source: 'misas.org', dates: [d0, d1], fetchedAt: new Date().toISOString(), churches: [
+            { id: 3, name: 'Parroquia con adoración', address: 'Plaza Mayor', town: 'Motril', lat: 36.7445, lon: -3.5165, photo: null, url: 'https://misas.org/p/ador/' + d0, masses: {}, adorations: { [d0]: [{ type: 'normal', begin: f2(h0), end: f2(h1), note: 'en invierno' }] } },
+            { id: 4, name: 'Capilla de adoración perpetua', address: 'Calle Santísimo', town: 'Motril', lat: 36.7500, lon: -3.5200, photo: null, url: 'https://misas.org/p/perpetua/' + d0, masses: {}, adorations: { [d0]: [{ type: 'perpetua', begin: '00:00', end: '00:00', note: '' }], [d1]: [{ type: 'perpetua', begin: '00:00', end: '00:00', note: '' }] } },
+          ] } });
+        }
         return r.fulfill({ json: { source: 'misas.org', dates: [d0, d1], fetchedAt: new Date().toISOString(), churches: [
-          { id: 1, name: 'Iglesia de la Victoria (misas.org)', address: 'Plaza de San Agustín', town: 'Motril', lat: 36.7439, lon: -3.5161, photo: null, url: 'https://misas.org/p/prueba/' + d0, masses: { [d0]: [hm], [d1]: ['08:30', '19:30'] } },
-          { id: 2, name: 'Capilla solo en misas.org', address: 'Calle Prueba', town: 'Motril', lat: 36.7480, lon: -3.5150, photo: null, url: 'https://misas.org/p/prueba2/' + d0, masses: {} },
+          { id: 1, name: 'Iglesia de la Victoria (misas.org)', address: 'Plaza de San Agustín', town: 'Motril', lat: 36.7439, lon: -3.5161, photo: null, url: 'https://misas.org/p/prueba/' + d0, masses: { [d0]: [hm], [d1]: ['08:30', '19:30'] }, adorations: {} },
+          { id: 2, name: 'Capilla solo en misas.org', address: 'Calle Prueba', town: 'Motril', lat: 36.7480, lon: -3.5150, photo: null, url: 'https://misas.org/p/prueba2/' + d0, masses: {}, adorations: {} },
         ] } });
       }
       if (u.pathname === '/api/places') return r.fulfill({ json: PLACES });
@@ -44,7 +51,10 @@ const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(
 
 (async () => {
   const browser = await chromium.launch();
-  const c = await ctx(browser), p = await c.newPage(); const errs = [];
+  // Las insignias nuevas se celebran con un diálogo: se comprueba la primera y luego se cierran solas.
+  let badgeShots = 0;
+  const badges = async (pg) => pg.addLocatorHandler(pg.getByText(/^Nuevas? insignias?$/), async () => { if (!badgeShots++) await pg.screenshot({ path: '.e2e/shots/20-insignia.png' }); await pg.getByRole('button', { name: '¡Gracias, Señor!' }).click(); });
+  const c = await ctx(browser), p = await c.newPage(); await badges(p); const errs = [];
   p.on('pageerror', (e) => errs.push(e.message)); p.on('console', (m) => { if (m.type() === 'error' && !/ERR_FAILED|Failed to load resource/.test(m.text())) errs.push(m.text()); });
   const shot = (n) => p.screenshot({ path: `${OUT}/${n}.png` });
 
@@ -107,6 +117,12 @@ const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(
   await p.getByRole('button', { name: /Iglesia de la Victoria \(misas.org\), a/ }).first().click(); await p.getByRole('button', { name: 'Ver en misas.org' }).waitFor(); await p.getByRole('article').getByText('Mañana', { exact: true }).waitFor();
   await p.waitForTimeout(700); await shot('19d-radar-misas');
   await p.getByRole('button', { name: /Ermita de prueba/ }).last().click(); await p.getByText('¿El horario está mal?').first().waitFor();
+  await p.getByRole('tab', { name: 'Adoración', exact: true }).click(); await p.getByRole('heading', { name: 'Adoración hoy y mañana' }).waitFor(); await p.getByText(/Ahora, hasta las/).first().waitFor(); ok(await p.getByText('Parroquia con adoración').count() > 0, 'adoración en el radar');
+  await p.waitForTimeout(700); await shot('19e-radar-adoracion');
+  await p.getByRole('tab', { name: 'Adoración perpetua' }).click(); await p.getByText('Día y noche').first().waitFor(); ok(!(await p.getByText('Parroquia con adoración').count()), 'perpetua solo muestra perpetuas');
+  await p.getByRole('button', { name: /Capilla de adoración perpetua, a/ }).first().click(); await p.getByText(/El Santísimo está expuesto día y noche/).waitFor();
+  await p.waitForTimeout(700); await shot('19f-radar-perpetua');
+  await p.getByRole('tab', { name: 'Misas' }).click(); await p.getByRole('heading', { name: 'Próximas misas' }).waitFor();
   await p.waitForTimeout(700); await shot('19b-radar-ficha');
   await p.goto(`${BASE}/descubrir/templos`); await p.getByRole('button', { name: 'Usar mi ubicación' }).first().click(); await p.getByText('Parroquia de la Encarnación').first().waitFor();
   await p.getByRole('button', { name: /Santuario de prueba/ }).last().click(); await p.getByRole('cell', { name: '12:00' }).first().waitFor(); await p.getByRole('cell', { name: '12:00' }).first().scrollIntoViewIfNeeded(); await shot('12b-ficha-confirmada');
@@ -115,6 +131,16 @@ const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(
   await p.getByRole('application').scrollIntoViewIfNeeded(); await p.evaluate(() => scrollTo(0, 0)); const pin = p.getByRole('button', { name: 'Parroquia de la Encarnación' }).first(); const before = await pin.boundingBox(); const map = await p.getByRole('application').boundingBox();
   await p.mouse.move(map.x + 150, map.y + 100); await p.mouse.down(); await p.mouse.move(map.x + 60, map.y + 60, { steps: 4 }); await p.mouse.up(); await p.waitForTimeout(100);
   const after = await pin.boundingBox(); ok(before && after && (before.x !== after.x || before.y !== after.y), 'el mapa se arrastra');
+
+  // Examen de conciencia: marca, llega al final y no guarda nada
+  await p.goto(`${BASE}/oracion/examen`); await p.getByRole('button', { name: 'Empezar' }).click();
+  await p.getByRole('button', { name: /He dejado de rezar/ }).click(); ok(await p.getByRole('button', { name: /He dejado de rezar/ }).getAttribute('aria-pressed') === 'true', 'examen: marcar');
+  await p.waitForTimeout(700); await shot('21-examen');
+  for (let k = 0; k < 9; k++) await p.getByRole('button', { name: /^(Siguiente|Terminar)$/ }).click();
+  await p.getByRole('heading', { name: 'Para recordar' }).waitFor(); await p.getByRole('heading', { name: 'Acto de contrición' }).waitFor(); ok(await p.getByText(/He dejado de rezar/).count() === 1, 'examen: resumen');
+  ok(!JSON.stringify(await p.evaluate(() => localStorage)).includes('He dejado de rezar'), 'examen: no se guarda');
+  await p.goto(`${BASE}/perfil/insignias`); await p.getByText(/de 15 conseguidas/).waitFor(); ok(await p.getByText('Primera llama').count() > 0, 'insignias'); await p.waitForTimeout(700); await shot('22-insignias');
+  ok(badgeShots > 0, 'celebración de insignia nueva');
 
   // Reflexión: enlaces a la Biblia en lugar del guía
   await p.goto(`${BASE}/descubrir/reflexiones/dudas`); ok(!(await p.getByText(/guía espiritual/i).count()), 'reflexión sin botón del guía');
@@ -133,7 +159,7 @@ const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(
   let d = await dump(); ok(d.verse_history.some((h) => h.shown_on === today()), 'historial de versículos subido'); ok(d.favorites.length === 1, 'favorito subido al registrarse');
 
   // Dispositivo B: mismo versículo y mismos favoritos
-  const c2 = await ctx(browser, { viewport: { width: 1280, height: 860 }, hasTouch: false }), p2 = await c2.newPage(); p2.on('pageerror', (e) => errs.push(e.message));
+  const c2 = await ctx(browser, { viewport: { width: 1280, height: 860 }, hasTouch: false }), p2 = await c2.newPage(); await badges(p2); p2.on('pageerror', (e) => errs.push(e.message));
   await p2.goto(`${BASE}/perfil/entrar`); await p2.getByRole('dialog').getByRole('button', { name: 'Empezar' }).click();
   await p2.getByLabel('Correo electrónico').fill('santi@test.es'); await p2.getByLabel('Contraseña').fill('contraseña1'); await p2.getByRole('button', { name: 'Entrar', exact: true }).click(); await p2.getByRole('button', { name: 'Cerrar sesión' }).waitFor();
   await p2.goto(BASE); await p2.getByText('Versículo de hoy').waitFor(); await p2.locator('blockquote').first().waitFor(); await p2.waitForTimeout(500);
@@ -153,14 +179,14 @@ const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(
   await p.goto(`${BASE}/perfil/estadisticas`); await p.waitForTimeout(700); await shot('18-estadisticas');
 
   // Otra persona no ve nada de la anterior
-  const c3 = await ctx(browser), p3 = await c3.newPage(); await p3.goto(`${BASE}/perfil/entrar`); await p3.getByRole('button', { name: 'Empezar' }).click(); await p3.getByRole('button', { name: 'Crear una cuenta' }).click(); await p3.getByLabel('Correo electrónico').fill('otra@test.es'); await p3.getByLabel('Contraseña').fill('contraseña2'); await p3.getByRole('button', { name: 'Crear cuenta' }).click(); await p3.getByRole('button', { name: 'Cerrar sesión' }).waitFor(); await p3.waitForTimeout(400);
+  const c3 = await ctx(browser), p3 = await c3.newPage(); await badges(p3); await p3.goto(`${BASE}/perfil/entrar`); await p3.getByRole('button', { name: 'Empezar' }).click(); await p3.getByRole('button', { name: 'Crear una cuenta' }).click(); await p3.getByLabel('Correo electrónico').fill('otra@test.es'); await p3.getByLabel('Contraseña').fill('contraseña2'); await p3.getByRole('button', { name: 'Crear cuenta' }).click(); await p3.getByRole('button', { name: 'Cerrar sesión' }).waitFor(); await p3.waitForTimeout(400);
   await p3.goto(`${BASE}/perfil/favoritos`); ok(await p3.getByText(vA.slice(0, 30)).count() === 0, 'los datos de cada usuario están separados');
   await p3.goto(`${BASE}/perfil/entrar`); await c3.close();
 
-  { const cd = await ctx(browser, { deviceScaleFactor: 3 }); const pd = await cd.newPage(); await pd.goto(BASE); await pd.getByRole('button', { name: 'Empezar' }).click(); await pd.locator('blockquote').first().waitFor(); await pd.waitForTimeout(900); await pd.screenshot({ path: `${OUT}/dpr3-inicio.png` }); await pd.goto(`${BASE}/oracion/rosario`); await pd.waitForTimeout(700); await cd.close(); }
+  { const cd = await ctx(browser, { deviceScaleFactor: 3 }); const pd = await cd.newPage(); await badges(pd); await pd.goto(BASE); await pd.getByRole('button', { name: 'Empezar' }).click(); await pd.locator('blockquote').first().waitFor(); await pd.waitForTimeout(900); await pd.screenshot({ path: `${OUT}/dpr3-inicio.png` }); await pd.goto(`${BASE}/oracion/rosario`); await pd.waitForTimeout(700); await cd.close(); }
 
   // Sin servicios: mensajes honestos y noticias guardadas
-  const c4 = await ctx(browser, { noSb: true, newsDown: true }), p4 = await c4.newPage(); await p4.goto(BASE); await p4.getByRole('button', { name: 'Empezar' }).click(); await p4.waitForTimeout(400);
+  const c4 = await ctx(browser, { noSb: true, newsDown: true }), p4 = await c4.newPage(); await badges(p4); await p4.goto(BASE); await p4.getByRole('button', { name: 'Empezar' }).click(); await p4.waitForTimeout(400);
   await p4.goto(`${BASE}/perfil`); ok(await p4.getByText(/se activarán cuando/).isVisible(), 'cuentas sin configurar: lo dice');
   await p4.goto(`${BASE}/descubrir/noticias`); await p4.getByText(/No se han podido cargar/).waitFor(); ok(true, 'noticias sin red: error claro y sin inventar');
   await c4.close();

@@ -103,12 +103,13 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
   const flip = (e: React.MouseEvent<HTMLButtonElement>) => {
     const settings = getState().settings, next = dark ? 'light' : 'dark';
     const apply = () => saveProfile({ settings: { ...settings, theme: next } });
-    const doc = document as Document & { startViewTransition?: (cb: () => void) => { ready: Promise<void> } };
+    const doc = document as Document & { startViewTransition?: (cb: () => void) => { ready: Promise<void>; finished: Promise<void>; updateCallbackDone: Promise<void> } };
     if (!doc.startViewTransition || matchMedia('(prefers-reduced-motion: reduce)').matches) { apply(); return; }
     const r = e.currentTarget.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
     const end = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
     document.documentElement.dataset.nav = 'theme';
     const vt = doc.startViewTransition(apply);
+    vt.finished.catch(() => {}); vt.updateCallbackDone.catch(() => {});
     vt.ready.then(() => document.documentElement.animate({ clipPath: [`circle(0 at ${x}px ${y}px)`, `circle(${end}px at ${x}px ${y}px)`] }, { duration: 520, easing: 'cubic-bezier(.3,.7,.2,1)', pseudoElement: '::view-transition-new(root)' })).catch(() => {});
   };
   return <button onClick={flip} aria-label={dark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'} className={`press grid size-10 place-items-center rounded-full bg-paper text-ink ${className}`}>

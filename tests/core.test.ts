@@ -167,7 +167,7 @@ test('próximas misas', () => {
   assert.equal(nextMasses(w, new Date(2026, 10, 7, 19, 3))[0].at.getHours(), 19); // empezó hace 3 min
 });
 
-import { mergeDays, madridDays } from '../server/misas.ts';
+import { mergeDays, madridDays, adorationsFor } from '../server/misas.ts';
 test('misas.org: une hoy y mañana y ordena las horas', () => {
   const raw = (mass: string[] | null) => ({ id: 7, name: ' Parroquia X ', uri: 'parroquia-x', addr: 'Calle 1', loc: 'Motril', lat: '36.74', long: '-3.52', pic: null, mass: mass && mass.map((time) => ({ time })) });
   const [c] = mergeDays(['2026-11-08', '2026-11-09'], [[raw(['19:30', '09:00', '09:00'])], [raw(['20:00'])]]);
@@ -175,4 +175,27 @@ test('misas.org: une hoy y mañana y ordena las horas', () => {
   assert.equal(c.url, 'https://misas.org/p/parroquia-x/2026-11-08');
   assert.deepEqual(mergeDays(['a', 'b'], [[raw(null)], []])[0].masses, {});
   assert.deepEqual(madridDays(new Date('2026-11-08T23:30:00Z')), ['2026-11-09', '2026-11-10']);
+});
+test('misas.org: adoraciones del día', () => {
+  const raw = [{ begin: '19:00', end: '20:00', type: 'Normal', days: [0], comments: 'en invierno' }, { begin: '00:00', end: '00:00', type: 'Perpetua', days: [0, 1, 2, 3, 4, 5, 6] }, { begin: '09:00', end: '14:00', type: 'Prolongada', days: [1] }];
+  assert.deepEqual(adorationsFor(raw, '2026-11-08').map((a) => a.type), ['perpetua', 'normal']); // domingo
+  assert.deepEqual(adorationsFor(raw, '2026-11-09').map((a) => `${a.type} ${a.begin}`), ['perpetua 00:00', 'prolongada 09:00']); // lunes
+  assert.equal(adorationsFor(raw, '2026-11-08')[1].note, 'en invierno');
+  assert.deepEqual(adorationsFor(null, '2026-11-08'), []);
+});
+
+import { bestStreak, progressOf, earned } from '../src/lib/badges.ts';
+test('insignias: racha más larga y progreso', () => {
+  assert.equal(bestStreak(['2026-11-01', '2026-11-02', '2026-11-03', '2026-11-05', '2026-11-06']), 3);
+  assert.equal(bestStreak([]), 0);
+  const act = [
+    ...Array.from({ length: 16 }, (_, i) => ({ kind: 'reading' as const, ref: `MRK.${i + 1}`, label: '', day: '2026-11-0' + ((i % 7) + 1) })),
+    { kind: 'rosary' as const, ref: 'rosario-gloriosos', label: '', day: '2026-11-01' },
+    { kind: 'reading' as const, ref: 'dia-2026-11-01', label: '', day: '2026-11-01' },
+  ];
+  const p = progressOf(act);
+  assert.equal(p.chapters, 16); assert.equal(p.gospelBooks, 1); assert.equal(p.rosaries, 1); assert.equal(p.bestStreak, 7);
+  const ids = earned(p).map((b) => b.id);
+  for (const id of ['llama', 'semana', 'rosario1', 'cap10', 'evangelista']) assert.ok(ids.includes(id), id);
+  assert.ok(!ids.includes('mes'));
 });

@@ -109,6 +109,12 @@ html[data-nav="left"]::view-transition-new(root), html[data-nav="back"]::view-tr
 html[data-nav="theme"]::view-transition-old(root), html[data-nav="theme"]::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
 .theme-spin { display: grid; animation: theme-spin .5s var(--ease-spring); }
 @keyframes theme-spin { from { rotate: -90deg; scale: .5; opacity: 0; } }
+.medal-on { background: radial-gradient(circle at 30% 25%, #ffe27a, var(--sun) 45%, var(--flame)); color: #5a3a00; box-shadow: 0 8px 22px -10px var(--flame), inset 0 -4px 0 rgba(0,0,0,.08); }
+.medal-spin { animation: spin 14s linear infinite; }
+@keyframes spin { to { rotate: 360deg; } }
+.confetti { position: absolute; inset: 0; pointer-events: none; }
+.confetti i { position: absolute; top: -10px; width: 8px; height: 14px; border-radius: 2px; animation: confetti 1.6s cubic-bezier(.2,.6,.4,1) both; }
+@keyframes confetti { from { translate: 0 0; rotate: 0deg; opacity: 1; } to { translate: 0 420px; rotate: 540deg; opacity: 0; } }
 .bottom-fade { background: linear-gradient(to bottom, transparent, var(--paper) 45%); }
 .sheet { animation: sheet .3s cubic-bezier(.2,.9,.2,1); }
 @keyframes sheet { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }

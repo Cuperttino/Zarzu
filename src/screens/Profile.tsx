@@ -1,3 +1,4 @@
+import { BADGES, earned, progressOf } from '../lib/badges.ts';
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Chip, Icon, Input, Link, Notice, Page, Row, Section, Spinner, ThemeToggle } from '../components/ui.tsx';
 import { AuthError, authAvailable, config, deleteLocalSession, getSession, onAuth, recover, rest, signIn, signOut, signUp, updatePassword } from '../lib/supabase.ts';
@@ -22,6 +23,7 @@ export function ProfileHome() {
     {!authAvailable() && <div className="mt-4"><Notice>Las cuentas y la sincronización entre dispositivos se activarán cuando la app publicada se conecte a Supabase. Mientras tanto, todo se guarda en este dispositivo.</Notice></div>}
     <Section className="!mt-5"><div>
       <Row icon="heart" to="/perfil/favoritos" title="Favoritos" detail={favs.length === 1 ? '1 guardado' : `${favs.length} guardados`} />
+      <Row icon="star" to="/perfil/insignias" title="Insignias" detail={`${earned(progressOf(act)).length} de ${BADGES.length} conseguidas`} />
       <Row icon="flame" to="/perfil/estadisticas" title="Estadísticas" detail="Tu lectura y tu oración" />
       <Row icon="book" to="/perfil/historial" title="Historial" detail="Lecturas y oraciones" />
       <Row icon="bell" to="/perfil/ajustes" title="Ajustes" detail="Apariencia, recordatorios y datos" />

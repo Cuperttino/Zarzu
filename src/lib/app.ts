@@ -22,9 +22,9 @@ export let navDir: NavDir = 'fade';
 const reduced = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 function render(dir: NavDir, update: () => void) {
   navDir = dir;
-  const doc = document as Document & { startViewTransition?: (cb: () => void) => unknown };
+  const doc = document as Document & { startViewTransition?: (cb: () => void) => { ready: Promise<void>; finished: Promise<void>; updateCallbackDone: Promise<void> } };
   document.documentElement.dataset.nav = dir;
-  if (doc.startViewTransition && !reduced()) { document.documentElement.classList.add('vt'); doc.startViewTransition(() => flushSync(update)); }
+  if (doc.startViewTransition && !reduced()) { document.documentElement.classList.add('vt'); const vt = doc.startViewTransition(() => flushSync(update)); [vt.ready, vt.finished, vt.updateCallbackDone].forEach((p) => p?.catch(() => {})); }
   else update();
 }
 export function navigate(to: string, replace = false) {

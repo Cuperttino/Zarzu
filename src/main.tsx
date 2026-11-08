@@ -7,10 +7,11 @@ import { initSync, pull } from './lib/store.ts';
 import { Home, Onboarding } from './screens/Home.tsx';
 import { LiturgyScreen } from './screens/Liturgy.tsx';
 import { BibleHome, BibleBook, BibleReader, BibleSearch, VerseHistory } from './screens/Bible.tsx';
-import { PrayerHome, PrayerDetail, RosaryScreen, ChapletScreen } from './screens/Prayer.tsx';
+import { PrayerHome, PrayerDetail, RosaryScreen, ChapletScreen, ExamenScreen } from './screens/Prayer.tsx';
 import { DiscoverHome, NewsScreen, CalendarScreen, SaintsScreen, SaintDetail, QuotesScreen, ThemedList, ThemedDetail } from './screens/Discover.tsx';
 import { TemplesScreen } from './screens/Temples.tsx';
 import { RadarScreen } from './screens/Radar.tsx';
+import { BadgesScreen, BadgeCelebration } from './screens/Badges.tsx';
 import { ProfileHome, AuthScreen, SettingsScreen, FavoritesScreen, StatsScreen, HistoryScreen, PrivacyScreen, AdminScreen, PasswordScreen } from './screens/Profile.tsx';
 
 function Router({ path }: { path: string }): ReactNode {
@@ -29,6 +30,7 @@ function Router({ path }: { path: string }): ReactNode {
     case 'oracion':
       if (seg[1] === 'rosario') return <RosaryScreen />;
       if (seg[1] === 'coronilla') return <ChapletScreen />;
+      if (seg[1] === 'examen') return <ExamenScreen />;
       if (seg[1]) return <PrayerDetail id={seg[1]} />;
       return <PrayerHome />;
     case 'descubrir':
@@ -47,6 +49,7 @@ function Router({ path }: { path: string }): ReactNode {
       if (seg[1] === 'ajustes') return <SettingsScreen />;
       if (seg[1] === 'favoritos') return <FavoritesScreen />;
       if (seg[1] === 'estadisticas') return <StatsScreen />;
+      if (seg[1] === 'insignias') return <BadgesScreen />;
       if (seg[1] === 'historial') return <HistoryScreen />;
       if (seg[1] === 'admin') return <AdminScreen />;
       if (seg[1] === 'clave') return <PasswordScreen />;
@@ -90,6 +93,7 @@ function App() {
       <Router path={path} />
     </div>
     <Onboarding />
+    <BadgeCelebration />
   </div>;
 }
 

@@ -21,11 +21,13 @@ export interface State {
   verses: HistoryEntry[]; favorites: Favorite[]; activity: Activity[];
   lastRead: { book: string; c: number } | null;
   rosary: Record<string, unknown> | null;
+  /** Insignias que ya se han celebrado en este dispositivo; null hasta la primera vez. */
+  badgesSeen: string[] | null;
 }
 const initial: State = {
   name: '', onboarded: false, settings: { theme: 'light', readingScale: 1 }, place: null,
   notifications: { enabled: false, reminders: [{ id: 'morning', time: '08:00', enabled: true }, { id: 'gospel', time: '08:30', enabled: false }, { id: 'evening', time: '22:00', enabled: false }] },
-  verses: [], favorites: [], activity: [], lastRead: null, rosary: null,
+  verses: [], favorites: [], activity: [], lastRead: null, rosary: null, badgesSeen: null,
 };
 const KEY = 'zarzu.v2';
 const load = (): State => { try { return { ...initial, ...JSON.parse(localStorage.getItem(KEY) ?? '{}') }; } catch { return initial; } };

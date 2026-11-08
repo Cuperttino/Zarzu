@@ -2,16 +2,19 @@ import { useEffect, useMemo, useState } from 'react';
 import { Button, Chip, Icon, Input, Link, Notice, Page, Spinner } from '../components/ui.tsx';
 import { api, fmtKm, km } from '../lib/app.ts';
 import { useStore } from '../lib/store.ts';
-import { hhmm, nextMasses, parseSchedule, untilLabel, type NextMass, type Weekly } from '../lib/massTimes.ts';
+import { hhmm, nextMasses, parseSchedule, untilLabel, type Weekly } from '../lib/massTimes.ts';
 import { PlaceCard, geocode, places } from './Temples.tsx';
 import type { Place } from '../../server/places.ts';
-import type { MisasChurch, MisasResult } from '../../server/misas.ts';
+import type { Adoration, MisasChurch, MisasResult } from '../../server/misas.ts';
 
 type Geo = { lat: number; lon: number; name: string };
-const RADII = [1, 3, 5, 10];
-const SOON = 120; // minutos: una misa en las próximas 2 horas se marca como «pronto»
+type Mode = 'misa' | 'adoracion' | 'perpetua';
+const MODES: { id: Mode; label: string }[] = [{ id: 'misa', label: 'Misas' }, { id: 'adoracion', label: 'Adoración' }, { id: 'perpetua', label: 'Adoración perpetua' }];
+const RADII: Record<Mode, number[]> = { misa: [1, 3, 5, 10], adoracion: [1, 3, 5, 10], perpetua: [5, 10, 25] };
+const SOON = 120; // minutos: lo que empieza en las próximas 2 horas se marca como «pronto»
 const MISAS_ORG = 'https://misas.org/buscar/misa';
 const SAME_PLACE_KM = 0.08;
+const ADOR_LABEL: Record<Adoration['type'], string> = { normal: 'Adoración', prolongada: 'Adoración prolongada', perpetua: 'Adoración perpetua' };
 
 const bearing = (a: Geo, b: { lat: number; lon: number }) => {
   const r = Math.PI / 180, y = Math.sin((b.lon - a.lon) * r) * Math.cos(b.lat * r);
@@ -19,16 +22,30 @@ const bearing = (a: Geo, b: { lat: number; lon: number }) => {
   return Math.atan2(y, x); // 0 = norte, sentido horario
 };
 
-/** Un templo del radar: de misas.org (con sus misas de hoy y mañana), de OpenStreetMap, o de ambos. */
-interface Item { id: string; name: string; lat: number; lon: number; d: number; p: Place | null; m: MisasChurch | null; week: Weekly | null; next: NextMass[] }
+/** Una misa o un rato de adoración. Las misas no tienen hora de fin; la adoración sí. */
+interface Slot { at: Date; end: Date | null; minutes: number; label: string; note: string; perpetual: boolean }
+/** Un templo del radar: de misas.org, de OpenStreetMap o de ambos. */
+interface Item { id: string; name: string; lat: number; lon: number; d: number; p: Place | null; m: MisasChurch | null; week: Weekly | null; slots: Slot[] }
 
-function misasNext(m: MisasChurch, now: Date): NextMass[] {
-  const base = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  return Object.entries(m.masses).flatMap(([day, times]) => times.map((t) => {
-    const [y, mo, d] = day.split('-').map(Number), [h, mi] = t.split(':').map(Number);
-    const at = new Date(y, mo - 1, d, h, mi);
-    return { at, minutes: h * 60 + mi, dayOffset: Math.round((new Date(y, mo - 1, d).getTime() - base.getTime()) / 86400000) };
-  })).filter((n) => n.at.getTime() >= now.getTime() - 5 * 60000).sort((a, b) => a.at.getTime() - b.at.getTime());
+const dayDate = (day: string, t = '00:00') => { const [y, mo, d] = day.split('-').map(Number), [h, mi] = t.split(':').map(Number); return new Date(y, mo - 1, d, h, mi); };
+const isOpen = (s: Slot, now: Date) => s.perpetual || (!!s.end && s.at <= now && now < s.end);
+const sortKey = (s: Slot, now: Date) => (isOpen(s, now) ? now.getTime() : s.at.getTime());
+const minsTo = (s: Slot, now: Date) => (isOpen(s, now) ? 0 : (s.at.getTime() - now.getTime()) / 60000);
+
+function massSlots(m: MisasChurch, now: Date): Slot[] {
+  return Object.entries(m.masses).flatMap(([day, times]) => times.map((t) => ({ at: dayDate(day, t), end: null, minutes: dayDate(day, t).getHours() * 60 + dayDate(day, t).getMinutes(), label: 'Misa', note: '', perpetual: false })))
+    .filter((s) => s.at.getTime() >= now.getTime() - 5 * 60000);
+}
+function adorationSlots(m: MisasChurch, now: Date): Slot[] {
+  const out: Slot[] = [];
+  for (const [day, list] of Object.entries(m.adorations)) for (const a of list) {
+    const at = dayDate(day, a.begin);
+    let end = dayDate(day, a.end);
+    if (end <= at) end = new Date(end.getTime() + 86_400_000); // termina a medianoche o pasada
+    out.push({ at, end, minutes: at.getHours() * 60 + at.getMinutes(), label: ADOR_LABEL[a.type], note: a.note, perpetual: a.type === 'perpetua' });
+  }
+  const perpetual = out.find((s) => s.perpetual);
+  return perpetual ? [perpetual] : out.filter((s) => s.end! > now);
 }
 const sourceLabel = (it: Item) => it.m ? 'Horario de misas.org' : it.p?.mass.status === 'verified' ? 'Horario confirmado' : 'Horario sin confirmar';
 
@@ -36,23 +53,27 @@ function useNow() { const [n, set] = useState(() => new Date()); useEffect(() =>
 
 export function RadarScreen() {
   const fav = useStore((s) => s.place);
+  const [mode, setMode] = useState<Mode>('misa');
   const [origin, setOrigin] = useState<Geo | null>(fav ? { ...fav } : null);
   const [radius, setRadius] = useState(3), [list, setList] = useState<Place[] | null>(null), [misas, setMisas] = useState<MisasChurch[] | null>(null), [busy, setBusy] = useState(''), [err, setErr] = useState('');
   const [sel, setSel] = useState<string | null>(null), [q, setQ] = useState(''), [options, setOptions] = useState<Geo[]>([]), [showAll, setShowAll] = useState(false);
   const now = useNow();
+  const ador = mode !== 'misa';
+
+  const changeMode = (m: Mode) => { setMode(m); setSel(null); setShowAll(false); if (!RADII[m].includes(radius)) setRadius(m === 'perpetua' ? 10 : 3); };
 
   useEffect(() => {
     if (!origin) return;
-    let live = true; setBusy('Buscando misas cerca…'); setErr('');
-    const lat = +origin.lat.toFixed(4), lon = +origin.lon.toFixed(4);
-    void Promise.allSettled([places(lat, lon, Math.max(radius, 3)), api<MisasResult>(`/api/misas?lat=${lat}&lon=${lon}&radius=${Math.max(radius, 3) * 1000}`)]).then(([p, m]) => {
+    let live = true; setBusy(ador ? 'Buscando adoración cerca…' : 'Buscando misas cerca…'); setErr(''); setMisas(null);
+    const lat = +origin.lat.toFixed(4), lon = +origin.lon.toFixed(4), r = Math.max(radius, 3);
+    void Promise.allSettled([ador ? Promise.resolve([] as Place[]) : places(lat, lon, r), api<MisasResult>(`/api/misas?kind=${ador ? 'adorations' : 'masses'}&lat=${lat}&lon=${lon}&radius=${r * 1000}`)]).then(([p, m]) => {
       if (!live) return;
       setList(p.status === 'fulfilled' ? p.value : []);
       setMisas(m.status === 'fulfilled' ? m.value.churches : null);
-      if (p.status === 'rejected' && m.status === 'rejected') { setErr((p.reason as Error).message); setList(null); }
+      if (m.status === 'rejected' && (ador || p.status === 'rejected')) { setErr(ador ? (m.reason as Error).message : (p.reason as Error).message); if (ador || p.status === 'rejected') setList(null); }
     }).finally(() => live && setBusy(''));
     return () => { live = false; };
-  }, [origin?.lat, origin?.lon, radius]); // eslint-disable-line
+  }, [origin?.lat, origin?.lon, radius, ador]); // eslint-disable-line
 
   const locate = () => {
     if (!navigator.geolocation) { setErr('Este navegador no permite obtener tu ubicación. Busca por localidad.'); return; }
@@ -74,25 +95,35 @@ export function RadarScreen() {
     for (const m of misas ?? []) {
       const p = list.filter((x) => !used.has(x.id) && km(m, x) < SAME_PLACE_KM).sort((a, b) => km(m, a) - km(m, b))[0] ?? null;
       if (p) used.add(p.id);
-      out.push({ id: `m${m.id}`, name: m.name, lat: m.lat, lon: m.lon, d: km(origin, m), p, m, week: null, next: misasNext(m, now) });
+      const slots = mode === 'misa' ? massSlots(m, now) : adorationSlots(m, now);
+      if (mode === 'perpetua' && !slots.some((s) => s.perpetual)) continue;
+      if (ador && !slots.length) continue;
+      out.push({ id: `m${m.id}`, name: m.name, lat: m.lat, lon: m.lon, d: km(origin, m), p, m, week: null, slots });
     }
-    for (const p of list) {
+    if (mode === 'misa') for (const p of list) {
       if (used.has(p.id)) continue;
       const week = parseSchedule(p.mass.text);
-      out.push({ id: p.id, name: p.name, lat: p.lat, lon: p.lon, d: km(origin, p), p, m: null, week, next: week ? nextMasses(week, now) : [] });
+      const slots = week ? nextMasses(week, now).map((n) => ({ at: n.at, end: null, minutes: n.minutes, label: 'Misa', note: '', perpetual: false })) : [];
+      out.push({ id: p.id, name: p.name, lat: p.lat, lon: p.lon, d: km(origin, p), p, m: null, week, slots });
     }
     return out.filter((x) => x.d <= radius + 0.01).sort((a, b) => a.d - b.d);
-  }, [list, misas, origin, radius, now]);
+  }, [list, misas, origin, radius, now, mode, ador]);
 
-  const upcoming = useMemo(() => items.flatMap((it) => it.next.slice(0, 3).map((n) => ({ it, n }))).sort((a, b) => a.n.at.getTime() - b.n.at.getTime()), [items]);
-  const withText = items.filter((x) => !x.m && x.p && !x.week && x.p.mass.status !== 'unavailable');
-  const unknown = items.filter((x) => !x.m && x.p?.mass.status === 'unavailable');
-  const noMassToday = items.filter((x) => x.m && !x.next.length);
+  const upcoming = useMemo(() => items.flatMap((it) => it.slots.slice(0, 3).map((s) => ({ it, s })))
+    .sort((a, b) => mode === 'perpetua' ? a.it.d - b.it.d : sortKey(a.s, now) - sortKey(b.s, now)), [items, now, mode]);
+  const withText = mode === 'misa' ? items.filter((x) => !x.m && x.p && !x.week && x.p.mass.status !== 'unavailable') : [];
+  const unknown = mode === 'misa' ? items.filter((x) => !x.m && x.p?.mass.status === 'unavailable') : [];
+  const noMassToday = mode === 'misa' ? items.filter((x) => x.m && !x.slots.length) : [];
   const selected = items.find((x) => x.id === sel);
-  const soonCount = upcoming.filter((u) => (u.n.at.getTime() - now.getTime()) / 60000 <= SOON).length;
+  const soonCount = upcoming.filter((u) => minsTo(u.s, now) <= SOON).length;
+  const what = mode === 'misa' ? (n: number) => (n === 1 ? '1 misa' : `${n} misas`) : (n: number) => (n === 1 ? '1 rato de adoración' : `${n} ratos de adoración`);
+  const heading = mode === 'misa' ? 'Próximas misas' : mode === 'adoracion' ? 'Adoración hoy y mañana' : 'Adoración perpetua';
 
-  return <Page title="Radar de misas" back="/" subtitle="Las misas que empiezan pronto a tu alrededor">
-    <RadarView origin={origin} items={items} radius={radius} now={now} selected={sel} onSelect={(id) => setSel(id === sel ? null : id)} scanning={!!busy} />
+  return <Page title="Radar de misas" back="/" subtitle="Misas y adoración del Santísimo a tu alrededor">
+    <div role="tablist" aria-label="Qué buscar" className="no-bar -mx-5 mb-2 flex gap-2 overflow-x-auto px-5">
+      {MODES.map((m) => <Chip key={m.id} role="tab" aria-selected={mode === m.id} active={mode === m.id} onClick={() => changeMode(m.id)}>{m.label}</Chip>)}
+    </div>
+    <RadarView origin={origin} items={items} radius={radius} now={now} selected={sel} onSelect={(id) => setSel(id === sel ? null : id)} scanning={!!busy} mode={mode} />
     {!origin && !busy && <div className="mt-4 text-center">
       <Button onClick={locate} className="w-full"><Icon name="target" size={18} />Activar el radar</Button>
       <p className="mt-2 text-sm text-muted">Solo usamos tu ubicación al pulsar el botón y no la guardamos.</p>
@@ -106,22 +137,24 @@ export function RadarScreen() {
     {err && <div className="mt-3"><Notice tone="warn">{err}</Notice></div>}
     {busy && <Spinner label={busy} />}
 
-    {origin && list && <>
-      <div className="no-bar -mx-5 mt-3 flex gap-2 overflow-x-auto px-5">{RADII.map((r) => <Chip key={r} active={radius === r} onClick={() => setRadius(r)}>{r} km</Chip>)}</div>
-      <p className="mt-3 text-[15px] text-muted">{items.length} {items.length === 1 ? 'templo' : 'templos'} a menos de {radius} km{origin.name !== 'Tu ubicación' ? ` de ${origin.name.split(',')[0]}` : ''}. {soonCount ? <b className="text-ink">{soonCount === 1 ? '1 misa en las próximas 2 horas.' : `${soonCount} misas en las próximas 2 horas.`}</b> : ''}</p>
+    {origin && list && !busy && <>
+      <div className="no-bar -mx-5 mt-3 flex gap-2 overflow-x-auto px-5">{RADII[mode].map((r) => <Chip key={r} active={radius === r} onClick={() => setRadius(r)}>{r} km</Chip>)}</div>
+      <p className="mt-3 text-[15px] text-muted">{items.length} {items.length === 1 ? 'templo' : 'templos'} a menos de {radius} km{origin.name !== 'Tu ubicación' ? ` de ${origin.name.split(',')[0]}` : ''}. {mode !== 'perpetua' && soonCount ? <b className="text-ink">{what(soonCount)} ahora o en las próximas 2 horas.</b> : ''}</p>
 
-      {selected && (selected.m ? <MisasCard it={selected} now={now} onClose={() => setSel(null)} /> : selected.p && <PlaceCard place={selected.p} distance={selected.d} onClose={() => setSel(null)} />)}
-      {misas === null && !__PREVIEW__ && <div className="mt-3"><Notice tone="warn">Ahora mismo no se pueden consultar los horarios de misas.org. Mostramos los que tenemos de otras fuentes.</Notice></div>}
+      {selected && (selected.m ? <MisasCard it={selected} now={now} mode={mode} onClose={() => setSel(null)} /> : selected.p && <PlaceCard place={selected.p} distance={selected.d} onClose={() => setSel(null)} />)}
+      {misas === null && !__PREVIEW__ && mode === 'misa' && <div className="mt-3"><Notice tone="warn">Ahora mismo no se pueden consultar los horarios de misas.org. Mostramos los que tenemos de otras fuentes.</Notice></div>}
 
-      <h2 className="mt-7 text-[1.6rem] leading-tight">Próximas misas</h2>
-      {upcoming.length ? <ul className="mt-2 space-y-2">{(showAll ? upcoming : upcoming.slice(0, 8)).map(({ it, n }) => {
-        const mins = (n.at.getTime() - now.getTime()) / 60000;
-        return <li key={`${it.id}-${n.at.getTime()}`}><button onClick={() => setSel(it.id)} className={`press flex w-full items-center gap-3 rounded-[22px] p-3.5 text-left ${mins <= SOON ? 'c-ink' : 'bg-surface'}`}>
-          <span className="w-[5.6rem] shrink-0"><span className="block font-serif text-[1.7rem] leading-none">{hhmm(n.minutes)}</span><span className="mt-1 block text-xs font-bold leading-tight">{untilLabel(n.at, now)}</span></span>
-          <span className="min-w-0 flex-1"><span className="block font-serif text-[1.05rem] leading-[1.15]">{it.name}</span><span className="mt-0.5 block text-sm text-muted">{fmtKm(it.d)}. {sourceLabel(it)}</span></span>
+      <h2 className="mt-7 text-[1.6rem] leading-tight">{heading}</h2>
+      {upcoming.length ? <ul className="mt-2 space-y-2">{(showAll ? upcoming : upcoming.slice(0, 8)).map(({ it, s }) => {
+        const open = isOpen(s, now), soon = minsTo(s, now) <= SOON;
+        const big = s.perpetual ? '24 h' : s.end ? `${hhmm(s.minutes)}` : hhmm(s.minutes);
+        const small = s.perpetual ? 'Día y noche' : open ? `Ahora, hasta las ${hhmm(s.end!.getHours() * 60 + s.end!.getMinutes())}` : s.end ? `${untilLabel(s.at, now)}, hasta las ${hhmm(s.end.getHours() * 60 + s.end.getMinutes())}` : untilLabel(s.at, now);
+        return <li key={`${it.id}-${s.at.getTime()}`}><button onClick={() => setSel(it.id)} className={`press flex w-full items-center gap-3 rounded-[22px] p-3.5 text-left ${soon ? 'c-ink' : 'bg-surface'}`}>
+          <span className="w-[5.6rem] shrink-0"><span className="block font-serif text-[1.7rem] leading-none">{big}</span><span className="mt-1 block text-xs font-bold leading-tight">{small}</span></span>
+          <span className="min-w-0 flex-1"><span className="block font-serif text-[1.05rem] leading-[1.15]">{it.name}</span><span className="mt-0.5 block text-sm text-muted">{fmtKm(it.d)}. {ador ? `${s.label}${s.note ? ` (${s.note})` : ''}. misas.org` : sourceLabel(it)}</span></span>
           <Icon name="chevron" size={18} className="text-muted" /></button></li>;
-      })}</ul> : <p className="mt-2 text-[15px] leading-snug text-muted">No conocemos el horario de ningún templo de esta zona. Abre uno de la lista para llamar, ver su web o enviarnos su horario.</p>}
-      {upcoming.length > 8 && !showAll && <button className="mt-2 min-h-11 text-[15px] font-bold text-gold" onClick={() => setShowAll(true)}>Ver las {upcoming.length} misas</button>}
+      })}</ul> : <p className="mt-2 text-[15px] leading-snug text-muted">{mode === 'misa' ? 'No conocemos el horario de ningún templo de esta zona. Abre uno de la lista para llamar, ver su web o enviarnos su horario.' : mode === 'adoracion' ? 'misas.org no tiene adoración del Santísimo hoy ni mañana en esta zona. Prueba con más distancia.' : 'misas.org no tiene ninguna capilla de adoración perpetua en esta zona. Prueba con 25 km.'}</p>}
+      {upcoming.length > 8 && !showAll && <button className="mt-2 min-h-11 text-[15px] font-bold text-gold" onClick={() => setShowAll(true)}>Ver todo ({upcoming.length})</button>}
 
       {withText.length > 0 && <><h2 className="mt-7 text-[1.3rem] leading-tight">Con horario por revisar</h2><p className="text-sm text-muted">Tienen un horario escrito que no sabemos leer con seguridad. Ábrelos para verlo.</p>
         <ul className="mt-1">{withText.map((x) => <PlaceRow key={x.id} it={x} onClick={() => setSel(x.id)} />)}</ul></>}
@@ -129,7 +162,7 @@ export function RadarScreen() {
         <ul className="mt-1">{unknown.map((x) => <PlaceRow key={x.id} it={x} onClick={() => setSel(x.id)} />)}</ul></>}
       {noMassToday.length > 0 && <><h2 className="mt-7 text-[1.3rem] leading-tight">Sin misa hoy ni mañana</h2><p className="text-sm text-muted">Según misas.org, estos templos no tienen misa en los próximos dos días.</p>
         <ul className="mt-1">{noMassToday.map((x) => <PlaceRow key={x.id} it={x} onClick={() => setSel(x.id)} />)}</ul></>}
-      <p className="mt-6 text-xs leading-relaxed text-muted">Horarios de <a href="https://misas.org" target="_blank" rel="noopener" className="underline">misas.org</a>, de la Asociación Eucharistia. Donde no los tiene, salen de OpenStreetMap (sin confirmar) o los ha comprobado nuestro equipo (confirmados). No mostramos horarios inventados. Los días de fiesta entre semana y los cambios de verano pueden variar: si es importante, confírmalo con la parroquia. <Link to="/descubrir/templos" className="underline">Ver los templos en el mapa</Link></p>
+      <p className="mt-6 text-xs leading-relaxed text-muted">Horarios de <a href="https://misas.org" target="_blank" rel="noopener" className="underline">misas.org</a>, de la Asociación Eucharistia.{mode === 'misa' ? ' Donde no los tiene, salen de OpenStreetMap (sin confirmar) o los ha comprobado nuestro equipo (confirmados).' : ' Algunos ratos de adoración cambian en verano o en invierno: lo indica entre paréntesis.'} No mostramos horarios inventados. Si es importante, confírmalo con la parroquia. <Link to="/descubrir/templos" className="underline">Ver los templos en el mapa</Link></p>
     </>}
   </Page>;
 }
@@ -138,7 +171,7 @@ const PlaceRow = ({ it, onClick }: { it: Item; onClick: () => void }) => <li><bu
   <span className="min-w-0 flex-1"><span className="block font-serif text-[1.02rem] leading-[1.15]">{it.name}</span><span className="text-sm text-muted">{fmtKm(it.d)}{it.p?.phone ? '. Tiene teléfono' : ''}{it.p?.website ? '. Tiene web' : ''}</span></span>
   <Icon name="chevron" size={18} className="text-muted" /></button></li>;
 
-function RadarView({ origin, items, radius, now, selected, onSelect, scanning }: { origin: Geo | null; items: Item[]; radius: number; now: Date; selected: string | null; onSelect: (id: string) => void; scanning: boolean }) {
+function RadarView({ origin, items, radius, now, selected, onSelect, scanning, mode }: { origin: Geo | null; items: Item[]; radius: number; now: Date; selected: string | null; onSelect: (id: string) => void; scanning: boolean; mode: Mode }) {
   const R = 150, C = 160;
   return <div className="relative mx-auto mt-1 aspect-square w-full max-w-[22rem]">
     <svg viewBox="0 0 320 320" className="absolute inset-0 size-full" role="img" aria-label={origin ? `Radar con ${items.length} templos a menos de ${radius} km` : 'Radar apagado'}>
@@ -154,10 +187,11 @@ function RadarView({ origin, items, radius, now, selected, onSelect, scanning }:
       {origin && items.map((it) => {
         const a = bearing(origin, it), r = Math.min(1, it.d / radius) * (R - 8);
         const x = C + Math.sin(a) * r, y = C - Math.cos(a) * r;
-        const mins = it.next[0] ? (it.next[0].at.getTime() - now.getTime()) / 60000 : Infinity;
-        const tone = mins <= SOON ? 'soon' : it.next.length ? 'known' : 'none';
+        const first = it.slots[0], mins = first ? Math.min(...it.slots.map((s) => minsTo(s, now))) : Infinity;
+        const tone = mins <= SOON ? 'soon' : it.slots.length ? 'known' : 'none';
         const on = selected === it.id;
-        return <g key={it.id} role="button" tabIndex={0} aria-label={`${it.name}, a ${fmtKm(it.d)}${it.next[0] ? `, próxima misa a las ${hhmm(it.next[0].minutes)}` : ', sin horario'}`} onClick={() => onSelect(it.id)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(it.id); }} className="cursor-pointer outline-none">
+        const desc = !first ? ', sin horario' : first.perpetual ? ', adoración perpetua' : isOpen(first, now) ? ', adoración ahora' : `, próxima ${mode === 'misa' ? 'misa' : 'adoración'} a las ${hhmm(first.minutes)}`;
+        return <g key={it.id} role="button" tabIndex={0} aria-label={`${it.name}, a ${fmtKm(it.d)}${desc}`} onClick={() => onSelect(it.id)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(it.id); }} className="cursor-pointer outline-none">
           <circle cx={x} cy={y} r="14" fill="transparent" />
           {tone === 'soon' && <circle cx={x} cy={y} r="7" fill="var(--pop)" className="radar-ping" />}
           <circle cx={x} cy={y} r={on ? 8.5 : tone === 'none' ? 4.5 : 6.5} fill={tone === 'soon' ? 'var(--pop)' : tone === 'known' ? 'var(--sun)' : 'var(--paper)'} stroke={tone === 'none' ? 'var(--muted)' : on ? 'var(--ink)' : 'var(--pop)'} strokeWidth={on ? 3 : 1.6} />
@@ -166,26 +200,29 @@ function RadarView({ origin, items, radius, now, selected, onSelect, scanning }:
       <circle cx={C} cy={C} r="7" fill="var(--ink)" stroke="var(--paper)" strokeWidth="3" pointerEvents="none" />
     </svg>
     {origin && <div className="absolute -bottom-1 left-0 right-0 flex justify-center gap-3 text-xs text-muted">
-      <span className="flex items-center gap-1"><i className="inline-block size-2.5 rounded-full bg-pop" />En 2 horas</span>
-      <span className="flex items-center gap-1"><i className="inline-block size-2.5 rounded-full border border-pop bg-sun" />Más tarde</span>
-      <span className="flex items-center gap-1"><i className="inline-block size-2.5 rounded-full border border-muted bg-paper" />Sin horario</span>
+      <span className="flex items-center gap-1"><i className="inline-block size-2.5 rounded-full bg-pop" />{mode === 'misa' ? 'En 2 horas' : mode === 'perpetua' ? 'Adoración perpetua' : 'Ahora o en 2 h'}</span>
+      {mode !== 'perpetua' && <span className="flex items-center gap-1"><i className="inline-block size-2.5 rounded-full border border-pop bg-sun" />Más tarde</span>}
+      {mode === 'misa' && <span className="flex items-center gap-1"><i className="inline-block size-2.5 rounded-full border border-muted bg-paper" />Sin horario</span>}
     </div>}
   </div>;
 }
 
-function MisasCard({ it, now, onClose }: { it: Item; now: Date; onClose: () => void }) {
+function MisasCard({ it, now, mode, onClose }: { it: Item; now: Date; mode: Mode; onClose: () => void }) {
   const m = it.m!, p = it.p;
-  const days = Object.entries(m.masses);
-  const dayName = (day: string) => { const [y, mo, d] = day.split('-').map(Number); const dt = new Date(y, mo - 1, d); return dt.toDateString() === now.toDateString() ? 'Hoy' : 'Mañana'; };
-  const nowMin = (day: string, t: string) => { const [y, mo, d] = day.split('-').map(Number), [h, mi] = t.split(':').map(Number); return new Date(y, mo - 1, d, h, mi).getTime() < now.getTime() - 5 * 60000; };
+  const dayName = (day: string) => (dayDate(day).toDateString() === now.toDateString() ? 'Hoy' : 'Mañana');
+  const past = (day: string, t: string) => dayDate(day, t).getTime() < now.getTime() - 5 * 60000;
+  const masses = Object.entries(m.masses), adorations = Object.entries(m.adorations);
   return <article className="sheet mt-4 rounded-[26px] bg-surface p-5" aria-label={m.name}>
     <div className="flex items-start justify-between gap-3">
       <div><h3 className="text-[1.45rem] leading-[1.1]">{m.name}</h3><p className="mt-1 text-sm text-muted">{[m.address, m.town].filter(Boolean).join(', ')}. A {fmtKm(it.d)}.</p></div>
       <button onClick={onClose} aria-label="Cerrar" className="press -mr-2 -mt-1 grid size-10 shrink-0 place-items-center rounded-full"><Icon name="close" size={20} /></button>
     </div>
-    {days.length ? days.map(([day, times]) => <div key={day} className="mt-4"><p className="text-sm font-bold">{dayName(day)}</p>
-      <div className="mt-1.5 flex flex-wrap gap-1.5">{times.map((t) => <span key={t} className={`rounded-full px-3 py-1.5 text-[15px] font-bold ${nowMin(day, t) ? 'bg-paper text-muted line-through' : 'bg-pop text-white'}`}>{t}</span>)}</div></div>)
-      : <p className="mt-4 text-[15px]">Según misas.org no hay misa hoy ni mañana.</p>}
+    {mode === 'misa' ? (masses.length ? masses.map(([day, times]) => <div key={day} className="mt-4"><p className="text-sm font-bold">{dayName(day)}</p>
+      <div className="mt-1.5 flex flex-wrap gap-1.5">{times.map((t) => <span key={t} className={`rounded-full px-3 py-1.5 text-[15px] font-bold ${past(day, t) ? 'bg-paper text-muted line-through' : 'bg-pop text-white'}`}>{t}</span>)}</div></div>)
+      : <p className="mt-4 text-[15px]">Según misas.org no hay misa hoy ni mañana.</p>)
+      : adorations.some(([, l]) => l.some((a) => a.type === 'perpetua')) ? <p className="mt-4 rounded-2xl bg-paper p-3 text-[15px]"><b>Adoración perpetua.</b> El Santísimo está expuesto día y noche. Conviene confirmar el horario de acceso a la capilla.</p>
+      : adorations.map(([day, list]) => <div key={day} className="mt-4"><p className="text-sm font-bold">{dayName(day)}</p>
+        <ul className="mt-1.5 space-y-1.5">{list.map((a) => <li key={a.begin + a.end + a.note} className={`rounded-2xl px-3 py-2 text-[15px] ${past(day, a.end === '00:00' ? '23:59' : a.end) ? 'bg-paper text-muted line-through' : 'bg-paper'}`}><b>{a.begin}–{a.end}</b> {ADOR_LABEL[a.type]}{a.note ? `, ${a.note}` : ''}</li>)}</ul></div>)}
     <div className="mt-5 flex flex-wrap gap-2">
       <a href={`https://www.google.com/maps/dir/?api=1&destination=${m.lat},${m.lon}`} target="_blank" rel="noopener"><Button><Icon name="route" size={18} />Cómo llegar</Button></a>
       {p?.phone && <a href={`tel:${p.phone.replace(/\s/g, '')}`}><Button kind="ghost"><Icon name="phone" size={18} />Llamar</Button></a>}

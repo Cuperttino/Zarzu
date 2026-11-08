@@ -2,13 +2,15 @@ import { useEffect, useMemo, useState } from 'react';
 import { Button, Chip, FavoriteButton, Icon, Link, Notice, Page, Paragraphs, Row, Section, ShareButton, Tile } from '../components/ui.tsx';
 import { CATEGORIES, MYSTERIES, PRAYERS, chapletSteps, mysteriesOfDay, rosarySteps, type Step } from '../data/prayers.ts';
 import { logActivity, setState, useStore, getState } from '../lib/store.ts';
+import { CONFESSION_STEPS, EXAMEN, EXAMEN_INTRO, EXAMEN_PRAYER } from '../data/examen.ts';
 
 export function PrayerHome() {
   const key = mysteriesOfDay(new Date().getDay()), m = MYSTERIES[key];
   return <Page title="Oración">
     <div className="grid grid-cols-2 gap-2.5">
       <Tile to="/oracion/rosario" icon="rosary" title="Rezar el rosario" sub={`Hoy, ${m.name.toLowerCase()}`} className="col-span-2 c-ink" />
-      <Tile to="/oracion/coronilla" icon="sacred" title="Coronilla de la Misericordia" className="col-span-2" />
+      <Tile to="/oracion/coronilla" icon="sacred" title="Coronilla de la Misericordia" />
+      <Tile to="/oracion/examen" icon="candle" title="Examen de conciencia" sub="Para prepararte a la confesión" />
     </div>
     {CATEGORIES.map((c) => <Section key={c} title={c}>{PRAYERS.filter((p) => p.category === c).map((p) => <Row key={p.id} to={`/oracion/${p.id}`} title={p.title} />)}</Section>)}
   </Page>;
@@ -81,3 +83,45 @@ export function RosaryScreen() {
     footer={<Section title="Cambiar de misterios"><div className="no-bar -mx-5 flex gap-2 overflow-x-auto px-5">{Object.entries(MYSTERIES).map(([k, m]) => <Chip key={k} active={k === key} onClick={() => setKey(k)}>{m.name.replace('Misterios ', '').replace(/^./, (c) => c.toUpperCase())}{k === auto ? ' (hoy)' : ''}</Chip>)}</div></Section>} /></div>;
 }
 export const ChapletScreen = () => <BeadPrayer title="Coronilla de la Divina Misericordia" subtitle="Santa Faustina Kowalska" storageKey="coronilla" steps={chapletSteps()} activity={{ kind: 'prayer', ref: 'coronilla', label: 'Coronilla de la Divina Misericordia' }} />;
+
+/** Examen de conciencia guiado. Lo que marcas solo vive en esta pantalla: no se guarda ni se sincroniza. */
+export function ExamenScreen() {
+  const [i, setI] = useState(0), [marked, setMarked] = useState<Set<string>>(() => new Set());
+  const total = EXAMEN.length + 1, section = EXAMEN[i - 1];
+  const toggle = (q: string) => setMarked((s) => { const n = new Set(s); if (n.has(q)) n.delete(q); else n.add(q); return n; });
+  const go = (n: number) => { setI(n); scrollTo({ top: 0, behavior: 'smooth' }); };
+  const contrition = PRAYERS.find((p) => p.id === 'senor-mio');
+  return <Page title="Examen de conciencia" back="/oracion" subtitle="Para prepararte a la confesión">
+    <div className="mb-5 h-1.5 overflow-hidden rounded-full bg-surface" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={i} aria-label="Progreso del examen"><div className="h-full rounded-full bg-pop transition-[width] duration-500" style={{ width: `${(i / total) * 100}%` }} /></div>
+    {i === 0 && <div key="intro" className="slide">
+      {EXAMEN_INTRO.map((p) => <p key={p} className="mt-3 text-[17px] leading-relaxed">{p}</p>)}
+      <blockquote className="mt-5 rounded-[22px] bg-surface p-4 font-serif text-[1.15rem] leading-snug">{EXAMEN_PRAYER}</blockquote>
+      <Notice><b>Nada de lo que marques se guarda.</b> Solo sirve para que lo recuerdes al final, y se borra al salir de esta pantalla.</Notice>
+      <Button className="mt-5 w-full !min-h-14 text-[17px]" onClick={() => go(1)}>Empezar</Button>
+    </div>}
+    {section && <div key={section.id} className="slide">
+      <p className="text-sm font-bold text-gold">{section.summary}. {i} de {EXAMEN.length}</p>
+      <h2 className="mt-1 text-[1.8rem] leading-[1.08]">{section.title}</h2>
+      <ul className="mt-4 space-y-2">{section.questions.map((q) => { const on = marked.has(q); return <li key={q}>
+        <button onClick={() => toggle(q)} aria-pressed={on} className={`press flex w-full items-start gap-3 rounded-[20px] p-4 text-left text-[16px] leading-snug transition-colors duration-300 ${on ? 'c-ink' : 'bg-surface'}`}>
+          <span className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-full border-2 transition-colors ${on ? 'border-pop bg-pop text-white' : 'border-muted'}`}>{on && <Icon name="check" size={14} />}</span>{q}
+        </button></li>; })}</ul>
+      <p className="mt-3 text-sm text-muted">Marca lo que quieras recordar al confesarte.</p>
+      <div className="bottom-fade sticky bottom-[4.8rem] z-10 -mx-5 mt-5 flex gap-2 px-5 pb-2 pt-6 md:bottom-0 md:pb-4">
+        <Button kind="ghost" aria-label="Anterior" onClick={() => go(i - 1)}><Icon name="back" size={18} /></Button>
+        <Button className="flex-1 !min-h-14 text-[17px]" onClick={() => go(i + 1)}>{i === EXAMEN.length ? 'Terminar' : 'Siguiente'}</Button>
+      </div>
+    </div>}
+    {i === total && <div key="fin" className="slide">
+      <h2 className="text-[1.8rem] leading-[1.08]">Dios te espera con los brazos abiertos</h2>
+      {marked.size > 0 ? <Section title="Para recordar"><ul className="space-y-1.5">{[...marked].map((q) => <li key={q} className="flex gap-2 text-[16px] leading-snug"><Icon name="check" size={16} className="mt-1 shrink-0 text-gold" />{q}</li>)}</ul></Section>
+        : <p className="mt-3 text-[16px] leading-relaxed">No has marcado nada. Aun así, la confesión frecuente ayuda a crecer y da la gracia de Dios.</p>}
+      <Section title="Cómo confesarte"><ol className="space-y-3">{CONFESSION_STEPS.map((s, n) => <li key={s.title} className="flex gap-3"><span className="grid size-8 shrink-0 place-items-center rounded-full bg-surface font-bold">{n + 1}</span><span><b className="block">{s.title}</b><span className="text-[15px] leading-snug text-muted">{s.text}</span></span></li>)}</ol></Section>
+      {contrition && <Section title="Acto de contrición"><p className="reading whitespace-pre-line">{contrition.text}</p></Section>}
+      <div className="mt-8 flex flex-col gap-2">
+        <Link to="/descubrir/templos"><Button className="w-full"><Icon name="church" size={18} />Buscar una iglesia cerca</Button></Link>
+        <Button kind="ghost" onClick={() => { setMarked(new Set()); go(0); }}>Borrar lo marcado y empezar de nuevo</Button>
+      </div>
+    </div>}
+  </Page>;
+}
