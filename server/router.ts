@@ -1,3 +1,4 @@
+import { misasRoute } from './misas.js';
 import { HttpError, cdn, env, json, fetchWithTimeout } from './http.js';
 import { liturgyRoute } from './liturgy.js';
 import { newsRoute, FEEDS } from './news.js';
@@ -47,6 +48,7 @@ export async function route(req: Request): Promise<Response> {
       case '/api/liturgy': return await liturgyRoute(url);
       case '/api/news': return await newsRoute();
       case '/api/places': return await placesRoute(url);
+      case '/api/misas': return await misasRoute(url);
       case '/api/geocode': return await geocodeRoute(url);
       case '/api/cron/reminders': return await cronRoute(req);
     }

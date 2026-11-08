@@ -22,6 +22,15 @@ async function ctx(browser, opts = {}) {
       if (u.pathname === '/api/config') return r.fulfill({ json: { supabaseUrl: opts.noSb ? null : SB, supabaseAnonKey: opts.noSb ? null : 'anon', pushPublicKey: null, tileUrl: 'https://tile.test/{z}/{x}/{y}.png' } });
       if (u.pathname === '/api/liturgy') return r.fulfill({ json: LIT });
       if (u.pathname === '/api/news') return opts.newsDown ? r.abort() : r.fulfill({ json: NEWS });
+      if (u.pathname === '/api/misas') {
+        const f = (d) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+        const d0 = f(new Date()), d1 = f(new Date(Date.now() + 86400000));
+        const soon = new Date(Date.now() + 40 * 60000), hm = `${String(soon.getHours()).padStart(2, '0')}:${String(soon.getMinutes()).padStart(2, '0')}`;
+        return r.fulfill({ json: { source: 'misas.org', dates: [d0, d1], fetchedAt: new Date().toISOString(), churches: [
+          { id: 1, name: 'Iglesia de la Victoria (misas.org)', address: 'Plaza de San Agustín', town: 'Motril', lat: 36.7439, lon: -3.5161, photo: null, url: 'https://misas.org/p/prueba/' + d0, masses: { [d0]: [hm], [d1]: ['08:30', '19:30'] } },
+          { id: 2, name: 'Capilla solo en misas.org', address: 'Calle Prueba', town: 'Motril', lat: 36.7480, lon: -3.5150, photo: null, url: 'https://misas.org/p/prueba2/' + d0, masses: {} },
+        ] } });
+      }
       if (u.pathname === '/api/places') return r.fulfill({ json: PLACES });
       if (u.pathname === '/api/geocode') return r.fulfill({ json: { results: [{ name: 'Motril, Granada, Andalucía, España', lat: 36.7445, lon: -3.5205 }] } });
       return r.continue();
@@ -93,9 +102,11 @@ const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(
   await p.goto(`${BASE}/descubrir/templos`); await p.getByRole('button', { name: 'Usar mi ubicación' }).first().click(); await p.getByText('Parroquia de la Encarnación').first().waitFor();
   await p.waitForTimeout(700); await shot('12-templos');
   await p.goto(`${BASE}/descubrir/misas`); await p.getByRole('button', { name: 'Activar el radar' }).click(); await p.getByRole('heading', { name: 'Próximas misas' }).waitFor();
-  await p.getByText('Iglesia de la Victoria').first().waitFor(); await p.getByText('Con horario por revisar').waitFor(); await p.getByText('Sin horario todavía').waitFor();
+  await p.getByText('Iglesia de la Victoria (misas.org)').first().waitFor(); ok(await p.getByText('Horario de misas.org').count() > 0, 'horarios de misas.org en el radar'); await p.getByText('Sin misa hoy ni mañana').waitFor(); await p.getByText('Con horario por revisar').waitFor(); await p.getByText('Sin horario todavía').waitFor();
   await p.waitForTimeout(700); await shot('19-radar'); await p.screenshot({ path: '.e2e/shots/19c-radar-entero.png', fullPage: true });
-  await p.getByRole('button', { name: /Iglesia de la Victoria, a/ }).first().click(); await p.getByText('Lunes a sábado').first().waitFor(); await p.getByText('¿El horario está mal?').first().waitFor();
+  await p.getByRole('button', { name: /Iglesia de la Victoria \(misas.org\), a/ }).first().click(); await p.getByRole('button', { name: 'Ver en misas.org' }).waitFor(); await p.getByRole('article').getByText('Mañana', { exact: true }).waitFor();
+  await p.waitForTimeout(700); await shot('19d-radar-misas');
+  await p.getByRole('button', { name: /Ermita de prueba/ }).last().click(); await p.getByText('¿El horario está mal?').first().waitFor();
   await p.waitForTimeout(700); await shot('19b-radar-ficha');
   await p.goto(`${BASE}/descubrir/templos`); await p.getByRole('button', { name: 'Usar mi ubicación' }).first().click(); await p.getByText('Parroquia de la Encarnación').first().waitFor();
   await p.getByRole('button', { name: /Santuario de prueba/ }).last().click(); await p.getByRole('cell', { name: '12:00' }).first().waitFor(); await p.getByRole('cell', { name: '12:00' }).first().scrollIntoViewIfNeeded(); await shot('12b-ficha-confirmada');

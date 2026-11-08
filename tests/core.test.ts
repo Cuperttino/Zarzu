@@ -166,3 +166,13 @@ test('próximas misas', () => {
   assert.equal(n[1].at.getDay(), 0); assert.equal(n[1].at.getHours(), 10);
   assert.equal(nextMasses(w, new Date(2026, 10, 7, 19, 3))[0].at.getHours(), 19); // empezó hace 3 min
 });
+
+import { mergeDays, madridDays } from '../server/misas.ts';
+test('misas.org: une hoy y mañana y ordena las horas', () => {
+  const raw = (mass: string[] | null) => ({ id: 7, name: ' Parroquia X ', uri: 'parroquia-x', addr: 'Calle 1', loc: 'Motril', lat: '36.74', long: '-3.52', pic: null, mass: mass && mass.map((time) => ({ time })) });
+  const [c] = mergeDays(['2026-11-08', '2026-11-09'], [[raw(['19:30', '09:00', '09:00'])], [raw(['20:00'])]]);
+  assert.equal(c.name, 'Parroquia X'); assert.deepEqual(c.masses['2026-11-08'], ['09:00', '19:30']); assert.deepEqual(c.masses['2026-11-09'], ['20:00']);
+  assert.equal(c.url, 'https://misas.org/p/parroquia-x/2026-11-08');
+  assert.deepEqual(mergeDays(['a', 'b'], [[raw(null)], []])[0].masses, {});
+  assert.deepEqual(madridDays(new Date('2026-11-08T23:30:00Z')), ['2026-11-09', '2026-11-10']);
+});
