@@ -132,6 +132,11 @@ const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(
   await p.mouse.move(map.x + 150, map.y + 100); await p.mouse.down(); await p.mouse.move(map.x + 60, map.y + 60, { steps: 4 }); await p.mouse.up(); await p.waitForTimeout(100);
   const after = await pin.boundingBox(); ok(before && after && (before.x !== after.x || before.y !== after.y), 'el mapa se arrastra');
 
+  // Tocar la pestaña en la que ya estás no hace nada
+  await p.goto(`${BASE}/biblia`); await p.getByRole('heading', { name: 'La Biblia' }).waitFor();
+  { const before = await p.evaluate(() => history.length); for (let k = 0; k < 4; k++) await p.getByRole('navigation').getByRole('link', { name: 'Biblia' }).click(); await p.waitForTimeout(400);
+    ok(await p.evaluate(() => history.length) === before && !(await p.evaluate(() => document.querySelector('.nav-forward'))), 'tocar la pestaña activa no hace nada'); }
+
   // Examen de conciencia: marca, llega al final y no guarda nada
   await p.goto(`${BASE}/oracion/examen`); await p.getByRole('button', { name: 'Empezar' }).click();
   await p.getByRole('button', { name: /He dejado de rezar/ }).click(); ok(await p.getByRole('button', { name: /He dejado de rezar/ }).getAttribute('aria-pressed') === 'true', 'examen: marcar');

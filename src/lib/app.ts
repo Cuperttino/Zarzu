@@ -27,8 +27,12 @@ function render(dir: NavDir, update: () => void) {
   if (doc.startViewTransition && !reduced()) { document.documentElement.classList.add('vt'); const vt = doc.startViewTransition(() => flushSync(update)); [vt.ready, vt.finished, vt.updateCallbackDone].forEach((p) => p?.catch(() => {})); }
   else update();
 }
+const samePath = (x: string, y: string) => { try { return decodeURI(x).replace(/\/$/, '') === decodeURI(y).replace(/\/$/, ''); } catch { return x === y; } };
 export function navigate(to: string, replace = false) {
-  const from = current(), a = tabOf(from), b = tabOf(to);
+  const from = current();
+  // Si ya estás en esa pantalla (por ejemplo, tocas «Biblia» estando en la Biblia), no se hace nada.
+  if (!replace && samePath(from || '/', to || '/')) return;
+  const a = tabOf(from), b = tabOf(to);
   const dir: NavDir = a !== b && a >= 0 && b >= 0 && from.split('/').length <= 2 && to.split('/').length <= 2 ? (b > a ? 'right' : 'left') : replace ? 'fade' : a !== b ? 'fade' : 'forward';
   render(dir, () => {
     if (PREVIEW) { if (!replace) memStack.push(memPath); memPath = to; }
