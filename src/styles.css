@@ -78,8 +78,8 @@ html[data-nav="left"]::view-transition-new(root), html[data-nav="back"]::view-tr
 @keyframes out-right { to { opacity: 0; transform: translateX(60px); } }
 
 /* Barra de pestañas: una píldora que se desliza hasta la pestaña activa y un pequeño salto del icono. */
-.tab-pill { position: absolute; left: 0; top: .3rem; width: 20%; height: 2.2rem; transition: transform .45s var(--ease-spring); pointer-events: none; }
-.tab-pill span { display: block; margin: 0 auto; width: 3.6rem; height: 100%; border-radius: 999px; background: var(--sand); }
+.tab-pill { position: absolute; left: 0; top: .2rem; bottom: .05rem; width: 20%; transition: transform .45s var(--ease-spring); pointer-events: none; }
+.tab-pill span { display: block; margin: 0 auto; width: min(4.4rem, 94%); height: 100%; border-radius: 1.15rem; background: var(--sand); }
 .tab-pop { display: inline-block; animation: tab-pop .45s var(--ease-spring); }
 @keyframes tab-pop { 0% { transform: scale(.7) translateY(3px); } 60% { transform: scale(1.12) translateY(-2px); } 100% { transform: none; } }
 
