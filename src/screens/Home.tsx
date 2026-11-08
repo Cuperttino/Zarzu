@@ -39,9 +39,9 @@ export function Home() {
   const streak = streakOf(new Set(activity.map((a) => a.day)));
   const done = activity.some((a) => a.ref === `dia-${d}`);
 
-  return <div className="screen mx-auto w-full max-w-2xl px-5 pb-28 md:pb-12">
+  return <div className="mx-auto w-full max-w-2xl px-5 pb-28 md:pb-12">
     <section className="soft-hero relative -mx-5 overflow-hidden rounded-b-[36px] px-5 pb-6 md:mt-4 md:rounded-[36px]">
-      <Mark className="absolute -right-5 top-20 h-44 w-auto text-flame" />
+      <Mark className="flicker absolute -right-5 top-20 h-44 w-auto text-flame" />
       <header className="safe-t relative flex min-h-12 items-center justify-between">
         <Wordmark className="md:invisible" />
         <Link to="/perfil/estadisticas" label={`Racha: ${streak} ${streak === 1 ? 'día' : 'días'}`} className="press flex min-h-10 items-center gap-1 rounded-full bg-paper px-3 font-bold text-ink"><Icon name="flame" size={20} fill={streak > 0} className="text-flame" />{streak}</Link>
@@ -51,7 +51,7 @@ export function Home() {
         <h1 className="mt-1 max-w-[80%] text-[2.9rem] leading-[1]">{greeting()}{name ? <>,<br />{name}</> : ''}</h1>
         <p className="mt-5 flex items-start gap-2 text-[1.08rem] font-bold leading-[1.2]"><LitDot color={lit.color} className="mt-1 size-3 ring-2 ring-paper" />{lit.title}</p>
         <p className="mt-0.5 pl-5 text-[15px] text-muted">{lit.seasonLabel}. Color {COLOR_LABEL[lit.color].toLowerCase()}.</p>
-        {saint && <Link to={`/descubrir/santos/${encodeURIComponent(saint)}`} className="inline-flex min-h-8 items-center gap-1 pl-5 text-[15px] text-muted">Hoy recordamos a {saint}<Icon name="chevron" size={14} /></Link>}
+        {saint && <Link to={`/descubrir/santos/${encodeURIComponent(saint)}`} className="block min-h-8 pl-5 text-[15px] text-muted">Hoy recordamos a {saint}<Icon name="chevron" size={14} className="ml-0.5 inline align-[-2px]" /></Link>}
         <button disabled={!v} onClick={() => setStories(true)} className="press mt-4 flex min-h-14 w-full items-center justify-between rounded-full bg-pop pl-6 pr-2 text-[17px] font-extrabold text-white disabled:opacity-50">{done ? 'Volver a ver tu día' : 'Empieza tu día'}<span className="grid size-10 place-items-center rounded-full bg-paper text-gold"><Icon name={done ? 'check' : 'chevron'} size={19} /></span></button>
       </div>
     </section>
@@ -74,7 +74,7 @@ export function Home() {
       <GospelTeaser date={d} />
       <Tile to="/descubrir/misas" icon="target" title="Radar de misas" sub="Las misas que empiezan pronto cerca de ti" className="col-span-2 c-sun" />
       <Tile to="/oracion/rosario" icon="rosary" title="Rosario" sub={myst.name.replace('Misterios ', 'Hoy, ')} className="c-ink" />
-      <Tile to="/guia" icon="chat" title="Habla con tu guía espiritual" sub="Pregunta lo que quieras" />
+      <Tile to="/biblia" icon="book" title="Biblia" sub="Los 73 libros" />
       <Tile to="/oracion" icon="pray" title="Oraciones" sub="Para cada momento" className="col-span-2" />
     </div>
 
@@ -87,7 +87,7 @@ export function Home() {
     <section className="mt-12">
       <div className="mb-3 flex items-baseline justify-between"><h2 className="text-[1.6rem] leading-tight">Noticias de la Iglesia</h2><Link to="/descubrir/noticias" className="shrink-0 pl-2 text-sm text-muted">Ver todas</Link></div>
       {news.stale && <p className="mb-2 text-sm text-warn">Sin conexión: pueden no ser las más recientes.</p>}
-      {news.data ? <div className="no-bar -mx-5 flex snap-x gap-2.5 overflow-x-auto px-5 pb-1">{news.data.items.slice(0, 6).map((n) => <div key={n.id} className="w-[78%] max-w-80 shrink-0 snap-start"><NewsCard item={n} /></div>)}</div>
+      {news.data ? <div className="no-bar -mx-5 flex snap-x gap-2.5 overflow-x-auto px-5 pb-1">{news.data.items.slice(0, 6).map((n) => <div key={n.id} className="snap-card w-[78%] max-w-80 shrink-0 snap-start"><NewsCard item={n} /></div>)}</div>
         : news.loading ? <p className="pulse-soft h-48 rounded-[22px] bg-surface" /> : <p className="text-[15px] text-muted">Las noticias no están disponibles ahora. {news.error}</p>}
     </section>
 
@@ -137,7 +137,7 @@ export function Onboarding() {
   if (seen) return null;
   const done = () => { if (name.trim()) saveProfile({ name: name.trim().slice(0, 40) }); setState({ onboarded: true }); };
   return <div className="soft-hero fixed inset-0 z-50 flex flex-col justify-end overflow-hidden md:items-center md:justify-center" role="dialog" aria-modal="true" aria-labelledby="ob">
-    <Mark className="absolute -right-16 top-6 h-[26rem] w-auto text-flame" />
+    <Mark className="flicker absolute -right-16 top-6 h-[26rem] w-auto text-flame" />
     <form className="sheet safe-b relative w-full p-6 md:max-w-md" onSubmit={(e) => { e.preventDefault(); done(); }}>
       <h2 id="ob" className="text-[5rem] leading-none">Zarzu</h2>
       <p className="mt-1 text-[1.6rem] font-extrabold leading-[1.1] tracking-[-.02em]">Tu fe católica, un rato cada día.</p>

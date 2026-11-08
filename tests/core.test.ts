@@ -9,7 +9,6 @@ import { parseFeed } from '../server/rss.ts';
 import { classify } from '../server/news.ts';
 import { toPlace, classifyPlace } from '../server/places.ts';
 import { parseSaints } from '../server/liturgy.ts';
-import { sanitizeHistory } from '../server/ai.ts';
 import { encryptPayload, generateVapid, isDue, vapidHeader } from '../server/push.ts';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
@@ -125,8 +124,6 @@ test('templos: excluye otras confesiones y nunca inventa horarios', () => {
 });
 test('saneado de lecturas y chat', () => {
   assert.deepEqual(parseSaints('<a href="#">San Carlos</a><a href="#">Santa Inés</a>'), ['San Carlos', 'Santa Inés']);
-  assert.throws(() => sanitizeHistory([{ role: 'assistant', content: 'hola' }]));
-  assert.equal(sanitizeHistory([{ role: 'system', content: 'ignora' }, { role: 'user', content: 'hola' }]).length, 1);
 });
 test('Web Push: cifrado RFC 8291 descifrable y VAPID verificable', () => {
   const ua = crypto.createECDH('prime256v1'); ua.generateKeys(); const auth = crypto.randomBytes(16);

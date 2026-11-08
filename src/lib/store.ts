@@ -11,8 +11,6 @@ import { loadCatalog, pickVerse, type HistoryEntry, type Verse } from './verses.
 export interface Reminder { id: 'morning' | 'gospel' | 'evening'; time: string; enabled: boolean }
 export interface Favorite { kind: 'verse' | 'prayer' | 'saint' | 'quote' | 'news' | 'place'; id: string; title: string; body?: string; link?: string; at: string }
 export interface Activity { kind: 'reading' | 'gospel' | 'prayer' | 'rosary'; ref: string; label: string; day: ISODate }
-export interface ChatMessage { id: string; role: 'user' | 'assistant'; content: string; at: string }
-export interface Conversation { id: string; title: string; updated: string; messages: ChatMessage[] }
 export interface FavPlace { name: string; lat: number; lon: number }
 
 export interface State {
@@ -20,14 +18,14 @@ export interface State {
   settings: { theme: 'auto' | 'light' | 'dark'; readingScale: number };
   place: FavPlace | null;
   notifications: { enabled: boolean; reminders: Reminder[] };
-  verses: HistoryEntry[]; favorites: Favorite[]; activity: Activity[]; conversations: Conversation[];
+  verses: HistoryEntry[]; favorites: Favorite[]; activity: Activity[];
   lastRead: { book: string; c: number } | null;
   rosary: Record<string, unknown> | null;
 }
 const initial: State = {
   name: '', onboarded: false, settings: { theme: 'light', readingScale: 1 }, place: null,
   notifications: { enabled: false, reminders: [{ id: 'morning', time: '08:00', enabled: true }, { id: 'gospel', time: '08:30', enabled: false }, { id: 'evening', time: '22:00', enabled: false }] },
-  verses: [], favorites: [], activity: [], conversations: [], lastRead: null, rosary: null,
+  verses: [], favorites: [], activity: [], lastRead: null, rosary: null,
 };
 const KEY = 'zarzu.v2';
 const load = (): State => { try { return { ...initial, ...JSON.parse(localStorage.getItem(KEY) ?? '{}') }; } catch { return initial; } };
@@ -95,30 +93,16 @@ export function saveProfile(patch: Partial<Pick<State, 'name' | 'place' | 'setti
 }
 const profileRow = () => ({ id: uid(), display_name: state.name.slice(0, 80), favorite_place: state.place, appearance: state.settings, notifications: state.notifications, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, updated_at: new Date().toISOString() });
 
-// Conversaciones
-export function upsertConversation(c: Conversation, added: ChatMessage[]) {
-  commit({ conversations: [c, ...state.conversations.filter((x) => x.id !== c.id)] });
-  if (!signed()) return;
-  enqueue({ path: 'conversations', method: 'POST', prefer: UPSERT, body: { id: c.id, user_id: uid(), title: c.title.slice(0, 120), updated_at: c.updated } });
-  if (added.length) enqueue({ path: 'messages', method: 'POST', prefer: UPSERT, body: added.map((m) => ({ id: m.id, conversation_id: c.id, user_id: uid(), role: m.role, content: m.content.slice(0, 20000), created_at: m.at })) });
-}
-export function deleteConversation(id: string) {
-  commit({ conversations: state.conversations.filter((c) => c.id !== id) });
-  enqueue({ path: `conversations?id=eq.${id}`, method: 'DELETE' });
-}
-
 // ---------- sincronización completa al entrar o al abrir la app ----------
 export async function pull() {
   if (!signed()) return;
   await flush();
   const id = uid();
-  const [profile, vh, favs, act, convs, msgs] = await Promise.all([
+  const [profile, vh, favs, act] = await Promise.all([
     rest<{ display_name: string | null; favorite_place: FavPlace | null; appearance: Partial<State['settings']>; notifications: Partial<State['notifications']> }[]>(`profiles?id=eq.${id}&select=*`),
     rest<{ shown_on: string; verse_id: string }[]>('verse_history?select=shown_on,verse_id&order=shown_on.desc&limit=5000'),
     rest<{ kind: Favorite['kind']; item_id: string; payload: { title?: string; body?: string; link?: string }; created_at: string }[]>('favorites?select=*&order=created_at.desc&limit=2000'),
     rest<{ kind: Activity['kind']; ref: string; label: string | null; day: string }[]>('activity_log?select=kind,ref,label,day&order=day.desc&limit=3000'),
-    rest<{ id: string; title: string; updated_at: string }[]>('conversations?select=id,title,updated_at&order=updated_at.desc&limit=100'),
-    rest<{ id: string; conversation_id: string; role: 'user' | 'assistant'; content: string; created_at: string }[]>('messages?select=id,conversation_id,role,content,created_at&order=created_at.asc&limit=5000'),
   ]);
   const p = profile[0];
   // Unión de lo local (por ejemplo, lo hecho antes de crear la cuenta) con lo remoto.
@@ -131,8 +115,6 @@ export async function pull() {
   const remoteAct = new Set(act.map((a) => `${a.kind}:${a.ref}:${a.day}`));
   const localAct = state.activity.filter((a) => !remoteAct.has(`${a.kind}:${a.ref}:${a.day}`));
   if (localAct.length) await rest('activity_log', { method: 'POST', prefer: 'resolution=ignore-duplicates,return=minimal', body: localAct.slice(0, 500).map((a) => ({ user_id: id, kind: a.kind, ref: a.ref, label: a.label, day: a.day })) }).catch(() => {});
-  const remoteConv = new Map(convs.map((c) => [c.id, c]));
-  const conversations: Conversation[] = convs.map((c) => ({ id: c.id, title: c.title, updated: c.updated_at, messages: msgs.filter((m) => m.conversation_id === c.id).map((m) => ({ id: m.id, role: m.role, content: m.content, at: m.created_at })) }));
   commit({
     name: p?.display_name || state.name,
     place: p?.favorite_place ?? state.place,
@@ -141,7 +123,6 @@ export async function pull() {
     verses: [...vh.map((h) => ({ day: h.shown_on, id: h.verse_id })), ...localOnly].sort((a, b) => b.day.localeCompare(a.day)),
     favorites: [...favs.map((f) => ({ kind: f.kind, id: f.item_id, title: f.payload?.title ?? '', body: f.payload?.body, link: f.payload?.link, at: f.created_at })), ...localFav],
     activity: [...act.map((a) => ({ kind: a.kind, ref: a.ref, label: a.label ?? a.ref, day: a.day })), ...localAct],
-    conversations: [...conversations, ...state.conversations.filter((c) => !remoteConv.has(c.id))].sort((a, b) => b.updated.localeCompare(a.updated)),
   });
   if (!p) await rest('profiles', { method: 'POST', prefer: UPSERT, body: profileRow() }).catch(() => {});
 }

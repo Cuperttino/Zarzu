@@ -1,6 +1,6 @@
 # Zarzu
 
-App católica diaria: Evangelio y lecturas, versículo que no se repite, rosario, oraciones, santos, noticias de la Iglesia, templos cercanos y un guía espiritual con IA. Funciona en móvil, tablet y ordenador, y se instala como app (PWA).
+App católica diaria: Evangelio y lecturas, versículo que no se repite, rosario, oraciones, santos, noticias de la Iglesia, radar de misas y templos cercanos. Funciona en móvil, tablet y ordenador, y se instala como app (PWA).
 
 El nombre viene de la zarza ardiente (Éxodo 3): el fuego que arde sin consumirse. La racha diaria se muestra como una llama. En una búsqueda web no apareció ninguna app ni marca con ese nombre, aunque sí existe como apellido y como nombre artístico. Antes de lanzarla, consulta las marcas en [OEPM](https://consultas2.oepm.es/LocalizadorWeb/) y [EUIPO](https://euipo.europa.eu/eSearch/), y si el dominio está libre.
 
@@ -13,7 +13,6 @@ El nombre viene de la zarza ardiente (Éxodo 3): el fuego que arde sin consumirs
 | Calendario litúrgico con el propio de España, santoral, oraciones, rosario, coronilla, estadísticas | Sí | |
 | Lecturas del día, noticias y templos | Sí, al publicar en Vercel | Nada: son fuentes públicas |
 | Cuentas, sincronización y panel de administración | | Supabase |
-| Guía espiritual y reflexiones sobre las lecturas | | Clave de IA |
 | Recordatorios push | | Supabase, claves VAPID y GitHub Actions |
 
 Si falta un servicio, la pantalla lo dice. La app no muestra datos simulados.
@@ -33,7 +32,6 @@ Crea un repositorio vacío llamado `Zarzu` y sube esta carpeta.
 1. Importa el repositorio en [vercel.com](https://vercel.com). `vercel.json` ya indica cómo compilar.
 2. En Settings > Environment Variables, añade las de `.env.example`:
    - `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
-   - `AI_PROVIDER`, `AI_API_KEY`, `AI_MODEL`
    - `CONTACT_URL` (la dirección de tu repositorio; lo piden las normas de OpenStreetMap)
    - `PUBLIC_SITE_URL` (la dirección de la app, para SEO)
 3. Vuelve a desplegar.
@@ -53,9 +51,6 @@ Aparecerá «Administración» en Perfil.
 
 En iPhone, las notificaciones solo funcionan tras añadir la app a la pantalla de inicio desde Safari.
 
-### La IA
-La clave vive solo en el servidor. `AI_PROVIDER=anthropic` usa la API de Claude. Con `AI_PROVIDER=openai` y `AI_BASE_URL` puedes usar cualquier API compatible con OpenAI, como Groq o Gemini. Las llamadas tienen coste según el proveedor; `AI_DAILY_LIMIT` limita los mensajes por persona y día.
-
 ## Desarrollo
 
 ```sh
@@ -72,7 +67,7 @@ npm run check:sources   # comprueba desde tu ordenador que responden las fuentes
 - `src/lib/calendar.ts`: motor del calendario litúrgico, sin red.
 - `src/lib/verses.ts`: selección del versículo. Prioriza los nunca vistos, recupera primero los más antiguos y evita libro, capítulo y tema recientes.
 - `src/lib/store.ts`: datos locales, cola de sincronización y reparto del versículo entre dispositivos. La clave única (usuario, día) en Supabase resuelve el caso de dos dispositivos a la vez.
-- `server/`: API sin dependencias (noticias, lecturas, templos, IA, push). `api/index.ts` la expone en Vercel y `server/node.ts` en cualquier servidor Node.
+- `server/`: API sin dependencias (noticias, lecturas, templos, push). `api/index.ts` la expone en Vercel y `server/node.ts` en cualquier servidor Node.
 - `supabase/schema.sql`: tablas con Row Level Security. Cada persona solo accede a sus datos.
 - `.e2e/`: prueba de navegador con Playwright (fuentes externas y Supabase simulados).
 

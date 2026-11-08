@@ -19,13 +19,11 @@ async function ctx(browser, opts = {}) {
   await c.route('**/*', (r) => {
     const u = new URL(r.request().url());
     if (u.origin === BASE || u.origin === SB) {
-      if (u.pathname === '/api/config') return r.fulfill({ json: { supabaseUrl: opts.noSb ? null : SB, supabaseAnonKey: opts.noSb ? null : 'anon', aiEnabled: !opts.noAi, aiAllowAnon: false, pushPublicKey: null, tileUrl: 'https://tile.test/{z}/{x}/{y}.png' } });
+      if (u.pathname === '/api/config') return r.fulfill({ json: { supabaseUrl: opts.noSb ? null : SB, supabaseAnonKey: opts.noSb ? null : 'anon', pushPublicKey: null, tileUrl: 'https://tile.test/{z}/{x}/{y}.png' } });
       if (u.pathname === '/api/liturgy') return r.fulfill({ json: LIT });
-      if (u.pathname === '/api/liturgy/insight') return r.fulfill({ json: { reflection: 'Reflexión de prueba.', explanation: 'Explicación de prueba.', application: 'Aplicación de prueba.', generatedBy: 'prueba' } });
       if (u.pathname === '/api/news') return opts.newsDown ? r.abort() : r.fulfill({ json: NEWS });
       if (u.pathname === '/api/places') return r.fulfill({ json: PLACES });
       if (u.pathname === '/api/geocode') return r.fulfill({ json: { results: [{ name: 'Motril, Granada, Andalucía, España', lat: 36.7445, lon: -3.5205 }] } });
-      if (u.pathname === '/api/chat') return r.fulfill({ contentType: 'text/event-stream', body: 'data: {"t":"Respuesta "}\n\ndata: {"t":"simulada de prueba."}\n\ndata: {"done":true}\n\n' });
       return r.continue();
     }
     if (u.hostname === 'tile.test' || u.hostname === 'img.test') return r.fulfill({ contentType: 'image/png', body: png });
@@ -46,7 +44,7 @@ const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(
   await shot('00-bienvenida'); await p.getByLabel('Tu nombre').fill('Santi'); await p.getByRole('button', { name: 'Empezar' }).click();
   await p.locator('blockquote').first().waitFor(); await p.waitForTimeout(600);
   const hero = await p.locator('h1').first().innerText(); ok(/Santi/.test(hero), `saludo personalizado: ${hero}`);
-  ok(await p.getByText(/XXXI semana|semana del Tiempo/).first().isVisible(), 'día litúrgico visible');
+  ok(await p.getByText(/Tiempo Ordinario|Adviento|Navidad|Cuaresma|Pascua|Semana Santa/).first().isVisible(), 'día litúrgico visible');
   const verseText = await p.locator('blockquote').first().innerText(); ok(verseText.length > 20, 'versículo con texto real');
   await p.waitForTimeout(500); await shot('01-inicio');
   { const [dl] = await Promise.all([p.waitForEvent('download'), p.getByRole('button', { name: 'Compartir como imagen' }).first().click()]); await dl.saveAs(`${OUT}/share.png`); ok(true, 'imagen para compartir'); }
@@ -59,15 +57,15 @@ const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(
   // Favorito + historial
   await p.getByRole('button', { name: 'Guardar en favoritos' }).first().click();
   await p.getByRole('link', { name: 'Evangelio de hoy' }).first().click(); await p.getByRole('heading', { name: 'Primera lectura' }).waitFor(); await p.waitForTimeout(200);
-  await shot('02-liturgia'); ok(await p.getByText('Reflexión de prueba.').isVisible() || true, 'liturgia con IA');
+  await shot('02-liturgia'); ok(!(await p.getByText('Para entenderlo y vivirlo').count()), 'liturgia sin IA');
   ok(await p.getByText('Hoy no hay segunda lectura.').isVisible(), 'sin segunda lectura cuando no corresponde');
 
   // Biblia
   await p.goto(`${BASE}/biblia`); await p.getByText('Pentateuco').waitFor(); await shot('03-biblia');
   ok(await p.getByRole('link', { name: /Sabiduría/ }).count() > 0, 'incluye deuterocanónicos');
-  await p.goto(`${BASE}/biblia/JHN/3?v=16`); await p.getByText(/amó tanto Dios/).waitFor(); await p.waitForTimeout(200); await shot('04-lector'); ok(true, 'lector con versículo destacado');
+  await p.goto(`${BASE}/biblia/JHN/3?v=16`); await p.getByText(/amó tanto Dios/).waitFor(); await p.waitForTimeout(700); await shot('04-lector'); ok(true, 'lector con versículo destacado');
   await p.getByRole('button', { name: 'Modo lectura' }).click(); await p.waitForTimeout(150); await shot('04b-modo-lectura'); await p.getByRole('button', { name: 'Salir del modo lectura' }).click();
-  await p.goto(`${BASE}/biblia/buscar?q=${encodeURIComponent('buen pastor')}`); await p.locator('mark').first().waitFor({ timeout: 30000 }); await p.waitForTimeout(200); await shot('05-busqueda');
+  await p.goto(`${BASE}/biblia/buscar?q=${encodeURIComponent('buen pastor')}`); await p.locator('mark').first().waitFor({ timeout: 30000 }); await p.waitForTimeout(700); await shot('05-busqueda');
   ok(await p.locator('mark').count() > 0, 'búsqueda real en texto bíblico');
   await p.goto(`${BASE}/biblia/buscar?q=${encodeURIComponent('Jn 3,16')}`); await p.waitForURL(/JHN\/3/); ok(true, 'búsqueda por cita');
 
@@ -76,7 +74,7 @@ const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(
   await p.goto(`${BASE}/oracion/padre-nuestro`); await p.getByText('santificado sea').waitFor();
   await p.goto(`${BASE}/oracion/rosario`); await p.getByText('Señal de la cruz').first().waitFor();
   for (let i = 0; i < 9; i++) await p.getByRole('button', { name: /^Siguiente$/ }).click();
-  await p.waitForTimeout(200); await shot('07-rosario');
+  await p.waitForTimeout(700); await shot('07-rosario');
   ok(await p.getByText(/Padre nuestro|Ave María/).count() > 0, 'rosario avanza');
   await p.reload(); await p.waitForTimeout(300); ok(await p.getByText('Misterio 1').first().isVisible(), 'el rosario conserva el progreso');
   let n = 0; while (await p.getByRole('button', { name: /^(Siguiente|Terminar)$/ }).count() && n++ < 100) await p.getByRole('button', { name: /^(Siguiente|Terminar)$/ }).click();
@@ -93,12 +91,12 @@ const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(
 
   // Templos
   await p.goto(`${BASE}/descubrir/templos`); await p.getByRole('button', { name: 'Usar mi ubicación' }).first().click(); await p.getByText('Parroquia de la Encarnación').first().waitFor();
-  await p.waitForTimeout(400); await shot('12-templos');
+  await p.waitForTimeout(700); await shot('12-templos');
   await p.goto(`${BASE}/descubrir/misas`); await p.getByRole('button', { name: 'Activar el radar' }).click(); await p.getByRole('heading', { name: 'Próximas misas' }).waitFor();
   await p.getByText('Iglesia de la Victoria').first().waitFor(); await p.getByText('Con horario por revisar').waitFor(); await p.getByText('Sin horario todavía').waitFor();
-  await p.waitForTimeout(400); await shot('19-radar'); await p.screenshot({ path: '.e2e/shots/19c-radar-entero.png', fullPage: true });
+  await p.waitForTimeout(700); await shot('19-radar'); await p.screenshot({ path: '.e2e/shots/19c-radar-entero.png', fullPage: true });
   await p.getByRole('button', { name: /Iglesia de la Victoria, a/ }).first().click(); await p.getByText('Lunes a sábado').first().waitFor(); await p.getByText('¿El horario está mal?').first().waitFor();
-  await p.waitForTimeout(300); await shot('19b-radar-ficha');
+  await p.waitForTimeout(700); await shot('19b-radar-ficha');
   await p.goto(`${BASE}/descubrir/templos`); await p.getByRole('button', { name: 'Usar mi ubicación' }).first().click(); await p.getByText('Parroquia de la Encarnación').first().waitFor();
   await p.getByRole('button', { name: /Santuario de prueba/ }).last().click(); await p.getByRole('cell', { name: '12:00' }).first().waitFor(); await p.getByRole('cell', { name: '12:00' }).first().scrollIntoViewIfNeeded(); await shot('12b-ficha-confirmada');
   ok(await p.getByText('Confirmado').first().isVisible() && await p.getByText('Sin confirmar').first().isVisible(), 'distingue horarios confirmados y sin confirmar');
@@ -107,8 +105,8 @@ const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(
   await p.mouse.move(map.x + 150, map.y + 100); await p.mouse.down(); await p.mouse.move(map.x + 60, map.y + 60, { steps: 4 }); await p.mouse.up(); await p.waitForTimeout(100);
   const after = await pin.boundingBox(); ok(before && after && (before.x !== after.x || before.y !== after.y), 'el mapa se arrastra');
 
-  // Guía sin cuenta: pide entrar
-  await p.goto(`${BASE}/guia`); await p.getByText(/Necesitas una cuenta/).waitFor(); ok(true, 'la guía pide cuenta'); ok(await p.getByText(/no un sacerdote/).isVisible(), 'aviso de que no es sacerdote');
+  // El guía con IA ya no existe
+  await p.goto(`${BASE}/guia`); await p.waitForTimeout(300); ok(!(await p.getByText(/guía espiritual/i).count()), 'sin guía con IA');
 
   // Registro: dispositivo A
   await p.goto(`${BASE}/perfil/entrar`); await p.getByRole('button', { name: 'Crear una cuenta' }).click();
@@ -119,11 +117,7 @@ const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(
   const dump = async () => (await fetch(`${SB}/__dump`)).json();
   let d = await dump(); ok(d.verse_history.some((h) => h.shown_on === today()), 'historial de versículos subido'); ok(d.favorites.length === 1, 'favorito subido al registrarse');
 
-  // Guía con cuenta
-  await p.goto(`${BASE}/guia`); await p.getByLabel('Tu mensaje').fill('¿Qué es la gracia?'); await p.getByRole('button', { name: 'Enviar' }).click(); await p.getByText('Respuesta simulada de prueba.').waitFor(); await p.waitForTimeout(400); await shot('14-guia');
-  d = await dump(); ok(d.messages.length === 2 && d.conversations.length === 1, 'conversación sincronizada');
-
-  // Dispositivo B: mismo versículo, mismos favoritos, misma conversación
+  // Dispositivo B: mismo versículo y mismos favoritos
   const c2 = await ctx(browser, { viewport: { width: 1280, height: 860 }, hasTouch: false }), p2 = await c2.newPage(); p2.on('pageerror', (e) => errs.push(e.message));
   await p2.goto(`${BASE}/perfil/entrar`); await p2.getByRole('dialog').getByRole('button', { name: 'Empezar' }).click();
   await p2.getByLabel('Correo electrónico').fill('santi@test.es'); await p2.getByLabel('Contraseña').fill('contraseña1'); await p2.getByRole('button', { name: 'Entrar', exact: true }).click(); await p2.getByRole('button', { name: 'Cerrar sesión' }).waitFor();
@@ -131,7 +125,6 @@ const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(
   ok((await p2.locator('blockquote').first().innerText()) === vA, 'mismo versículo en otro dispositivo');
   await p2.screenshot({ path: `${OUT}/15-escritorio.png` });
   await p2.goto(`${BASE}/perfil/favoritos`); ok(await p2.getByText(vA.slice(0, 30)).count() > 0, 'favoritos en otro dispositivo');
-  await p2.goto(`${BASE}/guia`); await p2.getByRole('button', { name: 'Historial' }).click(); ok(await p2.getByText('¿Qué es la gracia?').count() > 0, 'historial de chat en otro dispositivo');
   await p2.goto(`${BASE}/descubrir/templos`); await p2.getByRole('button', { name: 'Usar mi ubicación' }).first().click(); await p2.getByText('Parroquia de la Encarnación').first().waitFor(); await p2.waitForTimeout(300); await p2.screenshot({ path: `${OUT}/16-templos-escritorio.png` });
 
   // Carrera de dos dispositivos en día nuevo: gana uno y ambos adoptan
@@ -140,9 +133,9 @@ const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(
   const dates = d.verse_history.length; ok(dates === 1, 'una sola fila por día'); void h2;
 
   // Modo oscuro
-  await p.goto(`${BASE}/perfil/ajustes`); await p.getByRole('button', { name: 'Oscuro', exact: true }).click(); await p.goto(BASE); await p.getByText('Versículo de hoy').waitFor(); await p.waitForTimeout(400); await shot('17-oscuro');
+  await p.goto(`${BASE}/perfil/ajustes`); await p.getByRole('button', { name: 'Oscuro', exact: true }).click(); await p.goto(BASE); await p.getByText('Versículo de hoy').waitFor(); await p.waitForTimeout(700); await shot('17-oscuro');
   ok(await p.evaluate(() => document.documentElement.classList.contains('dark')), 'modo oscuro');
-  await p.goto(`${BASE}/perfil/estadisticas`); await p.waitForTimeout(200); await shot('18-estadisticas');
+  await p.goto(`${BASE}/perfil/estadisticas`); await p.waitForTimeout(700); await shot('18-estadisticas');
 
   // Otra persona no ve nada de la anterior
   const c3 = await ctx(browser), p3 = await c3.newPage(); await p3.goto(`${BASE}/perfil/entrar`); await p3.getByRole('button', { name: 'Empezar' }).click(); await p3.getByRole('button', { name: 'Crear una cuenta' }).click(); await p3.getByLabel('Correo electrónico').fill('otra@test.es'); await p3.getByLabel('Contraseña').fill('contraseña2'); await p3.getByRole('button', { name: 'Crear cuenta' }).click(); await p3.getByRole('button', { name: 'Cerrar sesión' }).waitFor(); await p3.waitForTimeout(400);
@@ -152,14 +145,13 @@ const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(
   { const cd = await ctx(browser, { deviceScaleFactor: 3 }); const pd = await cd.newPage(); await pd.goto(BASE); await pd.getByRole('button', { name: 'Empezar' }).click(); await pd.locator('blockquote').first().waitFor(); await pd.waitForTimeout(900); await pd.screenshot({ path: `${OUT}/dpr3-inicio.png` }); await pd.goto(`${BASE}/oracion/rosario`); await pd.waitForTimeout(700); await cd.close(); }
 
   // Sin servicios: mensajes honestos y noticias guardadas
-  const c4 = await ctx(browser, { noSb: true, noAi: true, newsDown: true }), p4 = await c4.newPage(); await p4.goto(BASE); await p4.getByRole('button', { name: 'Empezar' }).click(); await p4.waitForTimeout(400);
-  await p4.goto(`${BASE}/guia`); await p4.getByText(/no se muestran respuestas simuladas/).waitFor(); ok(true, 'IA sin configurar: lo dice, no simula');
+  const c4 = await ctx(browser, { noSb: true, newsDown: true }), p4 = await c4.newPage(); await p4.goto(BASE); await p4.getByRole('button', { name: 'Empezar' }).click(); await p4.waitForTimeout(400);
   await p4.goto(`${BASE}/perfil`); ok(await p4.getByText(/se activarán cuando/).isVisible(), 'cuentas sin configurar: lo dice');
   await p4.goto(`${BASE}/descubrir/noticias`); await p4.getByText(/No se han podido cargar/).waitFor(); ok(true, 'noticias sin red: error claro y sin inventar');
   await c4.close();
 
   // Desbordamiento horizontal en móvil
-  for (const r of ['/', '/biblia', '/oracion', '/descubrir', '/perfil', '/liturgia', '/descubrir/calendario', '/descubrir/noticias', '/descubrir/templos', '/descubrir/misas', '/guia', '/oracion/rosario']) { await p.goto(BASE + r); await p.waitForTimeout(250); const o = await p.evaluate(() => document.documentElement.scrollWidth - innerWidth); ok(o <= 0, `sin scroll horizontal en ${r} (${o})`); }
+  for (const r of ['/', '/biblia', '/oracion', '/descubrir', '/perfil', '/liturgia', '/descubrir/calendario', '/descubrir/noticias', '/descubrir/templos', '/descubrir/misas', '/oracion/rosario']) { await p.goto(BASE + r); await p.waitForTimeout(250); const o = await p.evaluate(() => document.documentElement.scrollWidth - innerWidth); ok(o <= 0, `sin scroll horizontal en ${r} (${o})`); }
   ok(!errs.length, `sin errores de JavaScript ${errs.slice(0, 5).join(' | ')}`);
   await browser.close();
   console.log(fails.length ? `\nFALLOS: ${fails.length}` : '\nTODO OK');

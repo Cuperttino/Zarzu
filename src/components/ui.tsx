@@ -36,15 +36,16 @@ export function Link({ to, children, className = '', label }: { to: string; chil
 }
 /** Bloque de acceso: gris suave, icono arriba y título abajo. */
 export function Tile({ to, icon, title, sub, className = '' }: { to: string; icon: string; title: ReactNode; sub?: ReactNode; className?: string }) {
-  return <Link to={to} className={`press flex min-h-36 flex-col justify-between rounded-[22px] bg-surface p-4 ${className}`}>
+  return <Link to={to} className={`press tile reveal flex min-h-36 flex-col justify-between rounded-[22px] bg-surface p-4 ${className}`}>
     <span className="niche"><Icon name={icon} size={23} /></span>
     <span className="mt-5 block"><span className="block font-serif text-[1.2rem] leading-[1.06]">{title}</span>{sub && <span className="mt-1 block text-sm leading-tight opacity-60">{sub}</span>}</span>
   </Link>;
 }
 export function Page({ title, back, right, children, subtitle }: { title: string; back?: string; right?: ReactNode; subtitle?: string; children: ReactNode }) {
-  return <div className="screen mx-auto w-full max-w-2xl">
-    <header className="safe-t sticky top-0 z-20 bg-paper/85 px-3 backdrop-blur-xl">
-      <div className="flex min-h-11 items-center justify-between gap-1">
+  return <div className="mx-auto w-full max-w-2xl">
+    <header className="page-bar safe-t sticky top-0 z-20 bg-paper/85 px-3 backdrop-blur-xl">
+      <div className="relative flex min-h-11 items-center justify-between gap-1">
+        <span aria-hidden="true" className="page-mini pointer-events-none absolute inset-x-14 top-1/2 truncate text-center font-serif text-[1.05rem]" data-title={title} />
         {back ? <button aria-label="Volver" className="press -ml-1 grid size-11 place-items-center rounded-full" onClick={() => goBack(back)}><Icon name="back" /></button> : <Wordmark className="px-2 md:invisible" />}
         {right && <div className="flex min-w-0 items-center">{right}</div>}
       </div>
@@ -62,7 +63,7 @@ export const Wordmark = ({ className = '' }: { className?: string }) => <Link to
 export const LIT_SWATCH: Record<string, string> = { blanco: '#d4d4d8', rojo: '#ef4444', verde: '#22c55e', morado: '#8b5cf6', rosa: '#f472b6' };
 export const LitDot = ({ color, className = 'size-3' }: { color: string; className?: string }) => <span className={`inline-block shrink-0 rounded-full ${className}`} style={{ background: LIT_SWATCH[color] }} />;
 export const Section = ({ title, action, children, className = '' }: { title?: string; action?: ReactNode; children: ReactNode; className?: string }) => (
-  <section className={`mt-10 ${className}`}>{(title || action) && <div className="mb-3 flex items-baseline justify-between gap-3">{title && <h2 className="text-[1.52rem] leading-tight">{title}</h2>}{action}</div>}{children}</section>
+  <section className={`reveal mt-10 ${className}`}>{(title || action) && <div className="mb-3 flex items-baseline justify-between gap-3">{title && <h2 className="text-[1.52rem] leading-tight">{title}</h2>}{action}</div>}{children}</section>
 );
 export const Spinner = ({ label = 'Cargando…' }: { label?: string }) => <p role="status" className="pulse-soft py-8 text-center text-sm text-muted">{label}</p>;
 export const Notice = ({ tone = 'info', children, action }: { tone?: 'info' | 'warn' | 'error'; children: ReactNode; action?: ReactNode }) => (
@@ -72,7 +73,7 @@ export const Notice = ({ tone = 'info', children, action }: { tone?: 'info' | 'w
 );
 const BTN = { primary: 'bg-pop text-white', ghost: 'bg-surface text-ink', gold: 'bg-sun text-ink' };
 export const Button = ({ kind = 'primary', className = '', ...p }: React.ButtonHTMLAttributes<HTMLButtonElement> & { kind?: keyof typeof BTN }) => <button {...p} className={`press inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 text-[15px] font-bold disabled:opacity-50 ${BTN[kind]} ${className}`} />;
-export const Chip = ({ active, ...p }: React.ButtonHTMLAttributes<HTMLButtonElement> & { active?: boolean }) => <button {...p} aria-pressed={active} className={`press min-h-10 shrink-0 rounded-full px-4 text-[15px] font-bold ${active ? 'bg-pop text-white' : 'bg-surface text-ink'}`} />;
+export const Chip = ({ active, ...p }: React.ButtonHTMLAttributes<HTMLButtonElement> & { active?: boolean }) => <button {...p} aria-pressed={active} className={`press min-h-10 shrink-0 rounded-full px-4 text-[15px] font-bold transition-colors duration-300 ${active ? 'bg-pop text-white' : 'bg-surface text-ink'}`} />;
 export const Input = (p: React.InputHTMLAttributes<HTMLInputElement>) => <input {...p} className={`min-h-13 w-full rounded-full border-0 bg-surface px-5 text-[16px] text-ink outline-none placeholder:text-muted focus:ring-2 focus:ring-gold ${p.className ?? ''}`} />;
 export const Row = ({ to, icon, title, detail, onClick }: { to?: string; icon?: string; title: ReactNode; detail?: ReactNode; onClick?: () => void }) => {
   const inner = <>{icon && <span className="grid size-9 shrink-0 place-items-center"><Icon name={icon} size={23} /></span>}<span className="min-w-0 flex-1"><span className="block font-serif text-[1.02rem] leading-[1.15]">{title}</span>{detail && <span className="mt-0.5 block text-sm leading-snug text-muted">{detail}</span>}</span><Icon name="chevron" size={18} className="text-muted" /></>;

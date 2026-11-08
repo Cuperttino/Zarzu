@@ -16,7 +16,7 @@ export function ProfileHome() {
   const streak = useMemo(() => streakOf(new Set(act.map((a) => a.day))), [act]);
   return <Page title={name || "Perfil"}>
     <p className="text-[15px] text-muted">{s ? s.user.email : 'Tus datos están solo en este dispositivo'}</p>
-    <div className="mt-4 flex items-end gap-2"><span className="font-serif text-[4.29rem] leading-[1]">{streak}</span><Icon name='flame' fill={streak > 0} size={44} className={`mb-0.5 ${streak ? 'text-gold' : 'text-muted'}`} /><span className="mb-1 text-[15px] leading-tight text-muted">{streak === 1 ? 'día de racha' : 'días de racha'}</span></div>
+    <div className="mt-4 flex items-end gap-2"><span className="font-serif text-[4.29rem] leading-[1]">{streak}</span><Icon name='flame' fill={streak > 0} size={44} className={`mb-0.5 ${streak ? 'text-flame' : 'text-muted'}`} /><span className="mb-1 text-[15px] leading-tight text-muted">{streak === 1 ? 'día de racha' : 'días de racha'}</span></div>
     {place && <p className="mt-2 flex items-center gap-1 text-sm text-muted"><Icon name="pin" size={14} />{place.name}</p>}
     {!s && authAvailable() && <Link to="/perfil/entrar" className="mt-4 block"><Button className="w-full">Entrar o crear cuenta</Button></Link>}
     {!authAvailable() && <div className="mt-4"><Notice>Las cuentas y la sincronización entre dispositivos se activarán cuando la app publicada se conecte a Supabase. Mientras tanto, todo se guarda en este dispositivo.</Notice></div>}
@@ -134,9 +134,9 @@ export function HistoryScreen() {
     {!list.length && <p className="py-6 text-center text-[15px] text-muted">Aún no hay nada aquí.</p>}</Page>;
 }
 export const PrivacyScreen = () => <Page title="Privacidad y fuentes" back="/perfil"><div className="space-y-5 text-[15px] leading-relaxed">
-  <div><h2 className="text-xl">Tus datos</h2><p className="mt-1">Sin cuenta, todo se guarda solo en tu dispositivo. Con cuenta, tus favoritos, historial y conversaciones se guardan en Supabase con reglas que impiden que otras personas accedan a ellos.</p><p className="mt-2">Tus mensajes al guía espiritual se envían al proveedor de IA para generar la respuesta. No incluyas datos que no quieras compartir. Tu ubicación solo se usa cuando pulsas el botón y no se guarda.</p></div>
+  <div><h2 className="text-xl">Tus datos</h2><p className="mt-1">Sin cuenta, todo se guarda solo en tu dispositivo. Con cuenta, tus favoritos e historial se guardan en Supabase con reglas que impiden que otras personas accedan a ellos.</p><p className="mt-2">Tu ubicación solo se usa cuando pulsas el botón y no se guarda.</p></div>
   <div><h2 className="text-xl">Fuentes</h2><ul className="mt-1 list-disc space-y-1 pl-5"><li>Biblia: traducción de Félix Torres Amat (siglo XIX), de dominio público. Transcripción del proyecto Iter Catholicum; Ester 11-16 y Daniel 13-14 proceden de Wikisource.</li><li>Lecturas del día: Evangelio del día (evangelizo.org), con enlace a su web.</li><li>Calendario: calculado en la app según las normas litúrgicas, con el propio de España.</li><li>Noticias: Vatican News, Conferencia Episcopal Española, Alfa y Omega, Vida Nueva y la Archidiócesis de Sevilla. Siempre enlazan al medio original.</li><li>Mapa y templos: © colaboradores de OpenStreetMap (ODbL), Overpass y Nominatim.</li><li>Biografías ampliadas: Wikipedia (CC BY-SA).</li></ul></div>
-  <div><h2 className="text-xl">Contenido</h2><p className="mt-1">Las reflexiones y mensajes diarios son textos propios de la app. Las reflexiones sobre las lecturas se generan con IA y se indican como tales. Nada de esto sustituye a la enseñanza de la Iglesia ni al consejo de un sacerdote.</p></div>
+  <div><h2 className="text-xl">Contenido</h2><p className="mt-1">Las reflexiones y mensajes diarios son textos propios de la app. La app no usa inteligencia artificial. Nada de esto sustituye a la enseñanza de la Iglesia ni al consejo de un sacerdote.</p></div>
 </div></Page>;
 
 // ---------- Administración (las políticas RLS impiden escribir a quien no es admin) ----------

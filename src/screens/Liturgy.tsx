@@ -4,12 +4,10 @@ import { COLOR_LABEL, litDay } from '../lib/calendar.ts';
 import { addDays, fullDate, relativeTime, today } from '../lib/dates.ts';
 import { navigate, useCached } from '../lib/app.ts';
 import { logActivity } from '../lib/store.ts';
-import { config } from '../lib/supabase.ts';
 import { saintOfDay } from './Home.tsx';
 
 interface Reading { key: 'FR' | 'PS' | 'SR' | 'GSP'; label: string; reference: string; text: string }
 interface Liturgy { date: string; title: string; readings: Reading[]; saints: string[]; commentary: { title: string; author: string; source: string; text: string } | null; source: { name: string; url: string }; fetchedAt: string }
-interface Insight { reflection: string; explanation: string; application: string; generatedBy: string }
 
 const firstSentences = (t: string, n = 220) => { const c = t.replace(/\s+/g, ' '); if (c.length <= n) return c; const i = c.lastIndexOf(' ', n); return `${c.slice(0, i)}…`; };
 
@@ -27,8 +25,6 @@ export function GospelTeaser({ date }: { date: string }) {
 export function LiturgyScreen({ date }: { date?: string }) {
   const d = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : today(), lit = litDay(d), t = today();
   const q = useCached<Liturgy>(`lit.${d}`, `/api/liturgy?date=${d}`);
-  const aiPath = config().aiEnabled && Math.abs((+new Date(d) - +new Date(t)) / 86400000) <= 7 ? `/api/liturgy/insight?date=${d}` : null;
-  const ins = useCached<Insight>(`ins.${d}`, q.data ? aiPath : null);
   const saint = saintOfDay(d, lit);
   useEffect(() => { if (q.data?.readings.length && d === t) logActivity({ kind: 'gospel', ref: d, label: q.data.title || lit.title }); }, [q.data, d, t, lit.title]);
   const gospel = q.data?.readings.find((r) => r.key === 'GSP');
@@ -64,15 +60,6 @@ export function LiturgyScreen({ date }: { date?: string }) {
     </article>)}
     {q.data && !q.data.readings.some((r) => r.key === 'SR') && <p className="mt-6 text-sm text-muted">Hoy no hay segunda lectura.</p>}
 
-    {q.data && <Section title="Para entenderlo y vivirlo">
-      {!config().aiEnabled ? <Notice>La reflexión, la explicación y la aplicación práctica se generan con IA a partir de estas lecturas. Se activarán al configurar el servicio de IA.</Notice>
-        : !aiPath ? <Notice>Disponible para los días cercanos a hoy.</Notice>
-          : ins.loading && !ins.data ? <Spinner label="Preparando la reflexión…" />
-            : ins.data ? <div className="space-y-5">
-              {[['Reflexión del Evangelio', ins.data.reflection], ['Explicación sencilla de las lecturas', ins.data.explanation], ['Para tu vida de hoy', ins.data.application]].map(([h, x]) => <div key={h}><h3 className="text-lg">{h}</h3><p className="reading mt-1">{x}</p></div>)}
-              <p className="text-xs text-muted">Texto generado con inteligencia artificial sobre las lecturas de hoy. No es un texto del Magisterio.</p>
-            </div> : <Notice tone="warn" action={<Button kind="ghost" onClick={ins.reload}>Volver a intentar</Button>}>{ins.error}</Notice>}
-    </Section>}
 
     {q.data?.commentary && <Section title="Comentario">
       <p className="font-serif text-xl leading-snug">{q.data.commentary.title}</p>

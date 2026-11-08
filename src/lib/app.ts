@@ -1,5 +1,6 @@
 /** Enrutado, peticiones a la API con respaldo, recordatorios, compartir imagen y utilidades. */
 import { useEffect, useState, useSyncExternalStore } from 'react';
+import { flushSync } from 'react-dom';
 import { config } from './supabase.ts';
 import { getState, saveProfile } from './store.ts';
 import { token, getSession } from './supabase.ts';
@@ -13,16 +14,33 @@ const memStack: string[] = [];
 let depth = 0;
 const subs = new Set<() => void>();
 const current = () => (PREVIEW ? memPath : location.pathname + location.search);
-export function navigate(to: string, replace = false) {
-  if (PREVIEW) { if (!replace) memStack.push(memPath); memPath = to; }
-  else if (replace) history.replaceState(null, '', to); else { history.pushState(null, '', to); depth++; }
-  scrollTo(0, 0);
-  subs.forEach((f) => f());
+// Dirección del cambio de pantalla, para animarlo: pestaña a izquierda o derecha, avanzar, volver o fundido.
+const TAB_ORDER = ['', 'biblia', 'oracion', 'descubrir', 'perfil'];
+const tabOf = (p: string) => { const s = p.split('?')[0].split('/')[1] ?? ''; return s === 'liturgia' ? 0 : s === 'privacidad' ? 4 : TAB_ORDER.indexOf(s); };
+export type NavDir = 'left' | 'right' | 'forward' | 'back' | 'fade';
+export let navDir: NavDir = 'fade';
+const reduced = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+function render(dir: NavDir, update: () => void) {
+  navDir = dir;
+  const doc = document as Document & { startViewTransition?: (cb: () => void) => unknown };
+  document.documentElement.dataset.nav = dir;
+  if (doc.startViewTransition && !reduced()) { document.documentElement.classList.add('vt'); doc.startViewTransition(() => flushSync(update)); }
+  else update();
 }
-if (!PREVIEW) addEventListener('popstate', () => { depth = Math.max(0, depth - 1); subs.forEach((f) => f()); });
+export function navigate(to: string, replace = false) {
+  const from = current(), a = tabOf(from), b = tabOf(to);
+  const dir: NavDir = a !== b && a >= 0 && b >= 0 && from.split('/').length <= 2 && to.split('/').length <= 2 ? (b > a ? 'right' : 'left') : replace ? 'fade' : a !== b ? 'fade' : 'forward';
+  render(dir, () => {
+    if (PREVIEW) { if (!replace) memStack.push(memPath); memPath = to; }
+    else if (replace) history.replaceState(null, '', to); else { history.pushState(null, '', to); depth++; }
+    scrollTo(0, 0);
+    subs.forEach((f) => f());
+  });
+}
+if (!PREVIEW) addEventListener('popstate', () => { depth = Math.max(0, depth - 1); render('back', () => subs.forEach((f) => f())); });
 export const usePath = () => useSyncExternalStore((f) => { subs.add(f); return () => subs.delete(f); }, current);
 export function goBack(fallback: string) {
-  if (PREVIEW) { memPath = memStack.pop() ?? fallback; subs.forEach((f) => f()); return; }
+  if (PREVIEW) { render('back', () => { memPath = memStack.pop() ?? fallback; scrollTo(0, 0); subs.forEach((f) => f()); }); return; }
   if (depth > 0) history.back(); else navigate(fallback, true);
 }
 

@@ -44,23 +44,9 @@ create table if not exists public.activity_log (
 );
 create index if not exists activity_user_day on public.activity_log (user_id, day desc);
 
-create table if not exists public.conversations (
-  id uuid primary key,
-  user_id uuid not null references auth.users(id) on delete cascade,
-  title text not null default 'Conversación' check (char_length(title) <= 120),
-  updated_at timestamptz not null default now()
-);
-create index if not exists conversations_user on public.conversations (user_id, updated_at desc);
-
-create table if not exists public.messages (
-  id uuid primary key,
-  conversation_id uuid not null references public.conversations(id) on delete cascade,
-  user_id uuid not null references auth.users(id) on delete cascade,
-  role text not null check (role in ('user','assistant')),
-  content text not null check (char_length(content) <= 20000),
-  created_at timestamptz not null default now()
-);
-create index if not exists messages_conv on public.messages (conversation_id, created_at);
+-- La app ya no usa IA: se eliminan las tablas del antiguo guía si existían.
+drop table if exists public.messages, public.conversations, public.ai_usage cascade;
+drop function if exists public.consume_ai_quota(int);
 
 create table if not exists public.push_subscriptions (
   endpoint text primary key,
@@ -75,13 +61,6 @@ create table if not exists public.push_log (
   user_id uuid not null references auth.users(id) on delete cascade,
   reminder_id text not null, day date not null,
   primary key (user_id, reminder_id, day)
-);
-
-create table if not exists public.ai_usage (
-  user_id uuid not null references auth.users(id) on delete cascade,
-  day date not null default current_date,
-  count int not null default 0,
-  primary key (user_id, day)
 );
 
 -- Horarios comprobados: exigen fuente y fecha de comprobación.
@@ -116,18 +95,6 @@ create or replace function public.is_admin() returns boolean
 language sql stable security definer set search_path = public as
 $$ select exists (select 1 from public.app_admins where user_id = auth.uid()) $$;
 
--- Contador atómico de mensajes de IA por día.
-create or replace function public.consume_ai_quota(daily_limit int default 40) returns boolean
-language plpgsql security definer set search_path = public as $$
-declare used int;
-begin
-  if auth.uid() is null then return false; end if;
-  insert into public.ai_usage (user_id, day, count) values (auth.uid(), current_date, 1)
-  on conflict (user_id, day) do update set count = public.ai_usage.count + 1
-  returning count into used;
-  return used <= daily_limit;
-end $$;
-
 -- Permite a cada persona borrar su cuenta y, en cascada, todos sus datos.
 create or replace function public.delete_my_account() returns void
 language plpgsql security definer set search_path = public as $$
@@ -155,11 +122,8 @@ alter table public.app_admins enable row level security;
 alter table public.verse_history enable row level security;
 alter table public.favorites enable row level security;
 alter table public.activity_log enable row level security;
-alter table public.conversations enable row level security;
-alter table public.messages enable row level security;
 alter table public.push_subscriptions enable row level security;
 alter table public.push_log enable row level security;
-alter table public.ai_usage enable row level security;
 alter table public.verified_schedules enable row level security;
 alter table public.content_items enable row level security;
 
@@ -173,14 +137,9 @@ drop policy if exists own_favorites on public.favorites;
 create policy own_favorites on public.favorites for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
 drop policy if exists own_activity on public.activity_log;
 create policy own_activity on public.activity_log for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
-drop policy if exists own_conversations on public.conversations;
-create policy own_conversations on public.conversations for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
-drop policy if exists own_messages on public.messages;
-create policy own_messages on public.messages for all to authenticated using (user_id = auth.uid())
-  with check (user_id = auth.uid() and exists (select 1 from public.conversations c where c.id = conversation_id and c.user_id = auth.uid()));
 drop policy if exists own_push on public.push_subscriptions;
 create policy own_push on public.push_subscriptions for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
--- push_log y ai_usage: sin políticas. Solo acceden la clave de servicio y consume_ai_quota.
+-- push_log: sin políticas. Solo accede la clave de servicio.
 
 drop policy if exists read_schedules on public.verified_schedules;
 create policy read_schedules on public.verified_schedules for select to anon, authenticated using (true);
@@ -214,13 +173,11 @@ drop policy if exists admin_reports on public.mass_reports;
 create policy admin_reports on public.mass_reports for update to authenticated using (public.is_admin()) with check (public.is_admin());
 grant select, insert, update on public.mass_reports to authenticated;
 
-revoke all on public.push_log, public.ai_usage from anon, authenticated;
-revoke execute on function public.consume_ai_quota(int) from anon, public;
-grant execute on function public.consume_ai_quota(int) to authenticated;
+revoke all on public.push_log from anon, authenticated;
 
 revoke execute on function public.delete_my_account() from anon, public;
 grant execute on function public.delete_my_account() to authenticated;
-grant select, insert, update, delete on public.profiles, public.verse_history, public.favorites, public.activity_log, public.conversations, public.messages, public.push_subscriptions, public.verified_schedules, public.content_items to authenticated;
+grant select, insert, update, delete on public.profiles, public.verse_history, public.favorites, public.activity_log, public.push_subscriptions, public.verified_schedules, public.content_items to authenticated;
 grant select on public.app_admins to authenticated;
 grant select on public.verified_schedules, public.content_items to anon;
 

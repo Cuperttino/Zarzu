@@ -8,6 +8,5 @@ console.log('verso',(await p.locator('blockquote').first().innerText()).slice(0,
 await p.screenshot({path:'.e2e/shots/p1.png'});
 for(const t of ['Biblia','Oración','Descubrir','Perfil']){await p.getByRole('link',{name:t,exact:true}).first().click();await p.waitForTimeout(350)}
 await p.getByRole('link',{name:'Biblia',exact:true}).first().click();await p.getByRole('link',{name:/^Juan/}).first().click();await p.getByRole('link',{name:'3',exact:true}).click();await p.getByText(/amó tanto Dios/).waitFor();console.log('lector ok');await p.getByRole('button',{name:'Volver'}).click();await p.waitForTimeout(200);console.log('volver',await p.locator('h1').first().innerText());
-await p.getByRole('link',{name:'Oración',exact:true}).first().click();await p.getByRole('link',{name:/Habla con tu guía/}).click();await p.waitForTimeout(300);console.log('guia form',await p.getByLabel('Tu mensaje').count());
 await p.getByRole('link',{name:'Inicio',exact:true}).first().click();await p.getByRole('link',{name:'Evangelio de hoy'}).first().click();await p.waitForTimeout(300);await p.screenshot({path:'.e2e/shots/p2.png'});
 console.log('errores',errs);await b.close();s.close()});

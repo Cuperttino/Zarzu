@@ -2,15 +2,12 @@ import { HttpError, cdn, env, json, fetchWithTimeout } from './http.js';
 import { liturgyRoute } from './liturgy.js';
 import { newsRoute, FEEDS } from './news.js';
 import { geocodeRoute, placesRoute } from './places.js';
-import { aiEnabled, chatRoute, insightRoute } from './ai.js';
 import { cronRoute } from './push.js';
 
 function configRoute(): Response {
   return json({
     supabaseUrl: env('SUPABASE_URL') || null,
     supabaseAnonKey: env('SUPABASE_ANON_KEY') || null,
-    aiEnabled: aiEnabled(),
-    aiAllowAnon: env('AI_ALLOW_ANON') === 'true',
     pushPublicKey: env('VAPID_PUBLIC_KEY') || null,
     tileUrl: env('MAP_TILE_URL', 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'),
   }, { cache: 'public, max-age=300' });
@@ -25,7 +22,7 @@ async function probe(url: string, init: RequestInit = {}): Promise<{ ok: boolean
 async function healthRoute(url: URL): Promise<Response> {
   const configured = {
     supabase: !!env('SUPABASE_URL') && !!env('SUPABASE_ANON_KEY'),
-    serviceRole: !!env('SUPABASE_SERVICE_ROLE_KEY'), ai: aiEnabled(), aiProvider: env('AI_PROVIDER', 'anthropic'),
+    serviceRole: !!env('SUPABASE_SERVICE_ROLE_KEY'),
     push: !!env('VAPID_PUBLIC_KEY') && !!env('VAPID_PRIVATE_KEY'), cron: !!env('CRON_SECRET'),
   };
   if (url.searchParams.get('live') !== '1') return json({ configured });
@@ -48,14 +45,12 @@ export async function route(req: Request): Promise<Response> {
       case '/api/config': return configRoute();
       case '/api/health': return await healthRoute(url);
       case '/api/liturgy': return await liturgyRoute(url);
-      case '/api/liturgy/insight': return await insightRoute(url);
       case '/api/news': return await newsRoute();
       case '/api/places': return await placesRoute(url);
       case '/api/geocode': return await geocodeRoute(url);
       case '/api/cron/reminders': return await cronRoute(req);
     }
     if (m === 'POST') switch (path) {
-      case '/api/chat': return await chatRoute(req);
       case '/api/cron/reminders': return await cronRoute(req);
     }
     return json({ error: 'Ruta no encontrada.', code: 'not_found' }, { status: 404 });

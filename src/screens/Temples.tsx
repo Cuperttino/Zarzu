@@ -68,7 +68,7 @@ export function TemplesScreen() {
 
   return <Page title="Templos cerca de ti" back="/descubrir">
     <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); void search(); }}>
-      <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Localidad o código postal" aria-label="Localidad o código postal" />
+      <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Localidad o C.P." aria-label="Localidad o código postal" />
       <Button kind="ghost" aria-label="Buscar"><Icon name="search" size={18} /></Button>
       <Button type="button" kind="primary" aria-label="Usar mi ubicación" title="Usar mi ubicación" onClick={locate}><Icon name="target" size={18} /></Button>
     </form>

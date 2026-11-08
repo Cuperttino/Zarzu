@@ -1,9 +1,9 @@
 /** Cliente mínimo de Supabase sobre su API REST pública (GoTrue y PostgREST), sin dependencias. */
 export interface Session { access_token: string; refresh_token: string; expires_at: number; user: { id: string; email: string } }
-export interface RuntimeConfig { supabaseUrl: string | null; supabaseAnonKey: string | null; aiEnabled: boolean; aiAllowAnon: boolean; pushPublicKey: string | null; tileUrl: string }
+export interface RuntimeConfig { supabaseUrl: string | null; supabaseAnonKey: string | null; pushPublicKey: string | null; tileUrl: string }
 
 const DEFAULT_TILES = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-let cfg: RuntimeConfig = { supabaseUrl: null, supabaseAnonKey: null, aiEnabled: false, aiAllowAnon: false, pushPublicKey: null, tileUrl: DEFAULT_TILES };
+let cfg: RuntimeConfig = { supabaseUrl: null, supabaseAnonKey: null, pushPublicKey: null, tileUrl: DEFAULT_TILES };
 let loaded = false;
 export const config = () => cfg;
 export const configLoaded = () => loaded;

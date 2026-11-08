@@ -1,5 +1,5 @@
 #!/bin/bash
-cd /home/claude/emaus
+cd "$(dirname "$0")/.."
 node scripts/build.mjs >/dev/null && npx esbuild server/node.ts --bundle --platform=node --format=esm --outfile=.tmp-server.mjs --log-level=error
 node .e2e/mock-supabase.cjs >/dev/null 2>&1 & A=$!
 PORT=4173 node .tmp-server.mjs >/dev/null 2>&1 & B=$!

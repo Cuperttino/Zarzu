@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Icon, Link, Wordmark } from './components/ui.tsx';
-import { usePath, navigate } from './lib/app.ts';
+import { usePath, navigate, navDir } from './lib/app.ts';
 import { consumeAuthRedirect, loadConfig } from './lib/supabase.ts';
 import { initSync, pull } from './lib/store.ts';
 import { Home, Onboarding } from './screens/Home.tsx';
@@ -11,7 +11,6 @@ import { PrayerHome, PrayerDetail, RosaryScreen, ChapletScreen } from './screens
 import { DiscoverHome, NewsScreen, CalendarScreen, SaintsScreen, SaintDetail, QuotesScreen, ThemedList, ThemedDetail } from './screens/Discover.tsx';
 import { TemplesScreen } from './screens/Temples.tsx';
 import { RadarScreen } from './screens/Radar.tsx';
-import { GuideScreen } from './screens/Guide.tsx';
 import { ProfileHome, AuthScreen, SettingsScreen, FavoritesScreen, StatsScreen, HistoryScreen, PrivacyScreen, AdminScreen, PasswordScreen } from './screens/Profile.tsx';
 
 function Router({ path }: { path: string }): ReactNode {
@@ -32,7 +31,6 @@ function Router({ path }: { path: string }): ReactNode {
       if (seg[1] === 'coronilla') return <ChapletScreen />;
       if (seg[1]) return <PrayerDetail id={seg[1]} />;
       return <PrayerHome />;
-    case 'guia': return <GuideScreen id={seg[1]} initial={q.get('p') ?? undefined} />;
     case 'descubrir':
       if (seg[1] === 'noticias') return <NewsScreen />;
       if (seg[1] === 'templos') return <TemplesScreen />;
@@ -60,7 +58,7 @@ function Router({ path }: { path: string }): ReactNode {
 
 const TABS = [
   { to: '/', icon: 'home', label: 'Inicio', match: (s: string) => s === '' || s === 'liturgia' }, { to: '/biblia', icon: 'book', label: 'Biblia', match: (s: string) => s === 'biblia' },
-  { to: '/oracion', icon: 'rosary', label: 'Oración', match: (s: string) => s === 'oracion' || s === 'guia' }, { to: '/descubrir', icon: 'church', label: 'Descubrir', match: (s: string) => s === 'descubrir' },
+  { to: '/oracion', icon: 'rosary', label: 'Oración', match: (s: string) => s === 'oracion' }, { to: '/descubrir', icon: 'church', label: 'Descubrir', match: (s: string) => s === 'descubrir' },
   { to: '/perfil', icon: 'user', label: 'Perfil', match: (s: string) => s === 'perfil' || s === 'privacidad' },
 ];
 
@@ -77,15 +75,17 @@ function App() {
     if ('serviceWorker' in navigator && !__PREVIEW__ && location.protocol === 'https:') navigator.serviceWorker.register('/sw.js').catch(() => {});
   }, []);
   const seg = path.split('?')[0].split('/')[1] ?? '';
+  const active = TABS.findIndex((t) => t.match(seg));
   const reading = /^\/biblia\/[^/]+\/\d+/.test(path) && path.includes('zen=1');
   return <div className="md:flex">
-    {!reading && <nav aria-label="Principal" className="safe-b fixed inset-x-0 bottom-0 z-30 bg-paper/85 backdrop-blur-xl md:sticky md:top-0 md:h-dvh md:w-52 md:shrink-0 md:bg-transparent md:p-6">
+    {!reading && <nav aria-label="Principal" className="tabbar safe-b fixed inset-x-0 bottom-0 z-30 bg-paper/85 backdrop-blur-xl md:sticky md:top-0 md:h-dvh md:w-52 md:shrink-0 md:bg-transparent md:p-6">
       <Wordmark className="mb-8 hidden md:flex" />
-      <ul className="grid grid-cols-5 md:flex md:flex-col md:gap-0.5">
-        {TABS.map((t) => { const on = t.match(seg); return <li key={t.to}><Link to={t.to} className={`flex flex-col items-center gap-0.5 pb-1 pt-2 text-[10.5px] md:flex-row md:gap-3 md:py-2.5 md:text-[15px] ${on ? 'font-bold text-ink' : 'text-muted hover:text-ink'}`}><Icon name={t.icon} size={24} /><span aria-current={on ? 'page' : undefined}>{t.label}</span></Link></li>; })}
+      <ul className="relative grid grid-cols-5 md:flex md:flex-col md:gap-0.5">
+        {active >= 0 && <li aria-hidden="true" className="tab-pill md:hidden" style={{ transform: `translateX(${active * 100}%)` }}><span /></li>}
+        {TABS.map((t, i) => { const on = i === active; return <li key={t.to} className="relative"><Link to={t.to} className={`flex flex-col items-center gap-0.5 pb-1 pt-2 text-[10.5px] transition-colors duration-300 md:flex-row md:gap-3 md:py-2.5 md:text-[15px] ${on ? 'font-bold text-gold md:text-ink' : 'text-muted hover:text-ink'}`}><span key={on ? 'on' : 'off'} className={on ? 'tab-pop' : ''}><Icon name={t.icon} size={24} /></span><span aria-current={on ? 'page' : undefined}>{t.label}</span></Link></li>; })}
       </ul>
     </nav>}
-    <div className="min-w-0 flex-1" key={seg}>
+    <div className={`nav-anim nav-${navDir} min-w-0 flex-1`} key={path.split('?')[0]}>
       {__PREVIEW__ && <p className="bg-surface px-4 py-2 text-center text-xs leading-snug text-muted">Vista previa sin servidor. Lecturas, noticias y cuentas se activan al publicar la app.</p>}
       <Router path={path} />
     </div>

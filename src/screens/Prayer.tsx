@@ -8,8 +8,7 @@ export function PrayerHome() {
   return <Page title="Oración">
     <div className="grid grid-cols-2 gap-2.5">
       <Tile to="/oracion/rosario" icon="rosary" title="Rezar el rosario" sub={`Hoy, ${m.name.toLowerCase()}`} className="col-span-2 c-ink" />
-      <Tile to="/oracion/coronilla" icon="sacred" title="Coronilla de la Misericordia" />
-      <Tile to="/guia" icon="chat" title="Habla con tu guía espiritual" />
+      <Tile to="/oracion/coronilla" icon="sacred" title="Coronilla de la Misericordia" className="col-span-2" />
     </div>
     {CATEGORIES.map((c) => <Section key={c} title={c}>{PRAYERS.filter((p) => p.category === c).map((p) => <Row key={p.id} to={`/oracion/${p.id}`} title={p.title} />)}</Section>)}
   </Page>;
@@ -67,7 +66,7 @@ function BeadPrayer({ title, steps, storageKey, activity, subtitle, footer }: { 
       <p className="text-sm font-bold">{step.label}</p>
       <div className="reading mt-1"><Paragraphs text={step.id.startsWith('mi-') ? 'Contempla este misterio un momento, en silencio.' : step.text} /></div>
     </div>
-    <div className="sticky bottom-[4.8rem] z-10 mt-5 flex gap-2 md:bottom-4">
+    <div className="bottom-fade sticky bottom-[4.8rem] z-10 -mx-5 mt-5 flex gap-2 px-5 pb-2 pt-6 md:bottom-0 md:pb-4">
       <Button kind="ghost" onClick={() => go(i - 1)} disabled={i === 0} aria-label="Anterior"><Icon name="back" size={18} /></Button>
       <Button className="flex-1 !min-h-14 text-[17px]" onClick={() => go(i + 1)}>{i === steps.length - 1 ? 'Terminar' : 'Siguiente'}</Button>
     </div>
