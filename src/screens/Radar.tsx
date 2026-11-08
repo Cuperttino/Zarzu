@@ -8,7 +8,8 @@ import type { Place } from '../../server/places.ts';
 
 type Geo = { lat: number; lon: number; name: string };
 const RADII = [1, 3, 5, 10];
-const SOON = 120; // minutos: una misa en las próximas 2 horas se marca como «pronto»
+const SOON = 120;
+const MISAS_ORG = 'https://misas.org/buscar/misa'; // minutos: una misa en las próximas 2 horas se marca como «pronto»
 
 const bearing = (a: Geo, b: { lat: number; lon: number }) => {
   const r = Math.PI / 180, y = Math.sin((b.lon - a.lon) * r) * Math.cos(b.lat * r);
@@ -92,7 +93,7 @@ export function RadarScreen() {
 
       {withText.length > 0 && <><h2 className="mt-7 text-[1.3rem] leading-tight">Con horario por revisar</h2><p className="text-sm text-muted">Tienen un horario escrito que no sabemos leer con seguridad. Ábrelos para verlo.</p>
         <ul className="mt-1">{withText.map((x) => <PlaceRow key={x.p.id} it={x} onClick={() => setSel(x.p.id)} />)}</ul></>}
-      {unknown.length > 0 && <><h2 className="mt-7 text-[1.3rem] leading-tight">Sin horario todavía</h2><p className="text-sm text-muted">Ábrelos para llamar, ver su web o enviarnos el horario si lo conoces.</p>
+      {unknown.length > 0 && <><h2 className="mt-7 text-[1.3rem] leading-tight">Sin horario todavía</h2><p className="text-sm text-muted">Ábrelos para llamar, ver su web o enviarnos el horario si lo conoces. También puedes buscarlos en <a href={MISAS_ORG} target="_blank" rel="noopener" className="font-bold text-gold underline">misas.org</a>.</p>
         <ul className="mt-1">{unknown.map((x) => <PlaceRow key={x.p.id} it={x} onClick={() => setSel(x.p.id)} />)}</ul></>}
       <p className="mt-6 text-xs leading-relaxed text-muted">Los horarios salen de OpenStreetMap (sin confirmar) o los ha comprobado nuestro equipo en la web de la parroquia (confirmados). No mostramos horarios inventados. Los días de fiesta entre semana y los cambios de verano pueden variar: si es importante, confírmalo con la parroquia. <Link to="/descubrir/templos" className="underline">Ver los templos en el mapa</Link></p>
     </>}
@@ -107,7 +108,7 @@ function RadarView({ origin, items, radius, now, selected, onSelect, scanning }:
   const R = 150, C = 160;
   return <div className="relative mx-auto mt-1 aspect-square w-full max-w-[22rem]">
     <svg viewBox="0 0 320 320" className="absolute inset-0 size-full" role="img" aria-label={origin ? `Radar con ${items.length} templos a menos de ${radius} km` : 'Radar apagado'}>
-      <defs><radialGradient id="rg"><stop offset="0" stopColor="var(--sun)" stopOpacity=".35" /><stop offset="1" stopColor="var(--surface)" stopOpacity="1" /></radialGradient></defs>
+      <defs><radialGradient id="rg"><stop offset="0" stopColor="var(--radar-glow)" stopOpacity=".35" /><stop offset="1" stopColor="var(--surface)" stopOpacity="1" /></radialGradient></defs>
       <circle cx={C} cy={C} r={R} fill="url(#rg)" />
       {[1, 2, 3].map((k) => <circle key={k} cx={C} cy={C} r={(R * k) / 3} fill="none" stroke="var(--sand)" strokeWidth="1.5" />)}
       <path d={`M${C} ${C - R}V${C + R}M${C - R} ${C}H${C + R}`} stroke="var(--sand)" strokeWidth="1" />

@@ -117,6 +117,7 @@ export function PlaceCard({ place: p, distance, onClose }: { place: Place; dista
       </div>
       <div className="mt-4">
         <Schedule title="Horarios de misas" s={p.mass} website={p.website} name={p.name} />
+        {p.mass.status !== 'verified' && <a href="https://misas.org/buscar/misa" target="_blank" rel="noopener" className="mb-1 flex min-h-11 items-center gap-1.5 text-[15px] font-bold text-gold"><Icon name="search" size={16} />Buscar sus misas en misas.org</a>}
         <ReportForm place={p} />
         <Schedule title="Confesiones" s={p.confession} website={p.website} name={p.name} />
         <Schedule title="Horario de apertura" s={p.opening} website={p.website} name={p.name} />

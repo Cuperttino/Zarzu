@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Button, Chip, Icon, Input, Link, Notice, Page, Row, Section, Spinner } from '../components/ui.tsx';
+import { Button, Chip, Icon, Input, Link, Notice, Page, Row, Section, Spinner, ThemeToggle } from '../components/ui.tsx';
 import { AuthError, authAvailable, config, deleteLocalSession, getSession, onAuth, recover, rest, signIn, signOut, signUp, updatePassword } from '../lib/supabase.ts';
 import { pull, saveProfile, useStore, type Reminder } from '../lib/store.ts';
 import { disablePush, enablePush, navigate, pushSupported, usePromise, api } from '../lib/app.ts';
@@ -14,7 +14,7 @@ export function streakOf(days: Set<string>, t = today()) { let n = 0, d = days.h
 export function ProfileHome() {
   const s = useSession(), name = useStore((x) => x.name), place = useStore((x) => x.place), act = useStore((x) => x.activity), favs = useStore((x) => x.favorites), admin = useAdmin(s?.user.id);
   const streak = useMemo(() => streakOf(new Set(act.map((a) => a.day))), [act]);
-  return <Page title={name || "Perfil"}>
+  return <Page title={name || "Perfil"} right={<ThemeToggle className="!bg-surface" />}>
     <p className="text-[15px] text-muted">{s ? s.user.email : 'Tus datos están solo en este dispositivo'}</p>
     <div className="mt-4 flex items-end gap-2"><span className="font-serif text-[4.29rem] leading-[1]">{streak}</span><Icon name='flame' fill={streak > 0} size={44} className={`mb-0.5 ${streak ? 'text-flame' : 'text-muted'}`} /><span className="mb-1 text-[15px] leading-tight text-muted">{streak === 1 ? 'día de racha' : 'días de racha'}</span></div>
     {place && <p className="mt-2 flex items-center gap-1 text-sm text-muted"><Icon name="pin" size={14} />{place.name}</p>}

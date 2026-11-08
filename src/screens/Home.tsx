@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { FavoriteButton, Icon, Input, Link, LitDot, Mark, ShareButton, Tile, Wordmark } from '../components/ui.tsx';
+import { FavoriteButton, Icon, Input, Link, LitDot, Mark, ShareButton, ThemeToggle, Tile, Wordmark } from '../components/ui.tsx';
 import { COLOR_LABEL, litDay, upcoming, type LitDay } from '../lib/calendar.ts';
 import { longDate, parse, shortDate, today } from '../lib/dates.ts';
 import { dailyVerse, getState, logActivity, saveProfile, setState, useStore } from '../lib/store.ts';
@@ -44,7 +44,8 @@ export function Home() {
       <Mark className="flicker absolute -right-5 top-20 h-44 w-auto text-flame" />
       <header className="safe-t relative flex min-h-12 items-center justify-between">
         <Wordmark className="md:invisible" />
-        <Link to="/perfil/estadisticas" label={`Racha: ${streak} ${streak === 1 ? 'día' : 'días'}`} className="press flex min-h-10 items-center gap-1 rounded-full bg-paper px-3 font-bold text-ink"><Icon name="flame" size={20} fill={streak > 0} className="text-flame" />{streak}</Link>
+        <div className="flex items-center gap-2"><ThemeToggle />
+        <Link to="/perfil/estadisticas" label={`Racha: ${streak} ${streak === 1 ? 'día' : 'días'}`} className="press flex min-h-10 items-center gap-1 rounded-full bg-paper px-3 font-bold text-ink"><Icon name="flame" size={20} fill={streak > 0} className="text-flame" />{streak}</Link></div>
       </header>
       <div className="relative mt-8">
         <p className="text-[15px] text-muted first-letter:uppercase">{longDate(d)}</p>

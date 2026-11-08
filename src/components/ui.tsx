@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { goBack, navigate, shareImage } from '../lib/app.ts';
-import { toggleFavorite, useStore, type Favorite } from '../lib/store.ts';
+import { getState, saveProfile, toggleFavorite, useStore, type Favorite } from '../lib/store.ts';
 
 const P: Record<string, ReactNode> = {
   home: <path d="M3.500 11.500 12 4l8.500 7.500M6 9.500V20h12V9.500M12 11v6M9.800 13.200h4.400" />,
@@ -95,3 +95,23 @@ export function ShareButton({ text, reference, kicker, className = '' }: { text:
   return <><button aria-label="Compartir como imagen" disabled={busy} onClick={async () => { setBusy(true); const r = await shareImage({ text, reference, kicker }).catch(() => null); setBusy(false); if (r === 'downloaded') show('Imagen guardada en descargas'); if (r === null) show('No se ha podido crear la imagen'); }} className={`grid size-11 place-items-center rounded-full ${className}`}><Icon name="share" /></button>{toast}</>;
 }
 export const Paragraphs = ({ text }: { text: string }) => <>{text.split(/\n{2,}/).map((p, i) => <p key={i} className="whitespace-pre-line">{p}</p>)}</>;
+
+/** Cambia entre modo claro y oscuro. Con View Transitions, el nuevo modo se abre en círculo desde el botón. */
+export function ThemeToggle({ className = '' }: { className?: string }) {
+  useStore((s) => s.settings.theme);
+  const dark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+  const flip = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const settings = getState().settings, next = dark ? 'light' : 'dark';
+    const apply = () => saveProfile({ settings: { ...settings, theme: next } });
+    const doc = document as Document & { startViewTransition?: (cb: () => void) => { ready: Promise<void> } };
+    if (!doc.startViewTransition || matchMedia('(prefers-reduced-motion: reduce)').matches) { apply(); return; }
+    const r = e.currentTarget.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
+    const end = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+    document.documentElement.dataset.nav = 'theme';
+    const vt = doc.startViewTransition(apply);
+    vt.ready.then(() => document.documentElement.animate({ clipPath: [`circle(0 at ${x}px ${y}px)`, `circle(${end}px at ${x}px ${y}px)`] }, { duration: 520, easing: 'cubic-bezier(.3,.7,.2,1)', pseudoElement: '::view-transition-new(root)' })).catch(() => {});
+  };
+  return <button onClick={flip} aria-label={dark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'} className={`press grid size-10 place-items-center rounded-full bg-paper text-ink ${className}`}>
+    <span key={dark ? 'd' : 'l'} className="theme-spin"><Icon name={dark ? 'sun' : 'moon'} size={20} /></span>
+  </button>;
+}
