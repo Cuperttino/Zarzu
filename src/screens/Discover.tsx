@@ -133,6 +133,6 @@ export const ThemedList = () => <Page title="Reflexiones" back="/descubrir">{THE
 export function ThemedDetail({ id }: { id: string }) {
   const t = THEMED.find((x) => x.id === id);
   if (!t) return <Page title="Reflexiones" back="/descubrir/reflexiones"><Notice>Esa reflexión no existe.</Notice></Page>;
-  return <Page title={t.title} back="/descubrir/reflexiones"><p className="text-muted">{t.intro}</p><div className="reading mt-4">{t.body.map((p, i) => <p key={i}>{p}</p>)}</div><p className="mt-5 text-sm text-muted">Para leer: {t.refs.join('; ')}.</p><div className="mt-5"><Link to={`/guia?p=${encodeURIComponent(`Quiero hablar sobre esto: ${t.title.toLowerCase()}`)}`}><Button><Icon name="chat" size={18} />Hablar con tu guía espiritual</Button></Link></div></Page>;
+  return <Page title={t.title} back="/descubrir/reflexiones"><p className="text-muted">{t.intro}</p><div className="reading mt-4">{t.body.map((p, i) => <p key={i}>{p}</p>)}</div><p className="mt-6 text-sm text-muted">Para leer en la Biblia:</p><div className="mt-2 flex flex-wrap gap-2">{t.refs.map((r) => <Link key={r} to={`/biblia/buscar?q=${encodeURIComponent(r.replace(/\s*\(\d+\)/, ''))}`} className="press inline-flex min-h-10 items-center gap-1.5 rounded-full bg-surface px-4 text-[15px] font-bold"><Icon name="book" size={16} />{r}</Link>)}</div></Page>;
 }
 void ShareButton;

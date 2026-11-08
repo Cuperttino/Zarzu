@@ -116,6 +116,10 @@ const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(
   await p.mouse.move(map.x + 150, map.y + 100); await p.mouse.down(); await p.mouse.move(map.x + 60, map.y + 60, { steps: 4 }); await p.mouse.up(); await p.waitForTimeout(100);
   const after = await pin.boundingBox(); ok(before && after && (before.x !== after.x || before.y !== after.y), 'el mapa se arrastra');
 
+  // Reflexión: enlaces a la Biblia en lugar del guía
+  await p.goto(`${BASE}/descubrir/reflexiones/dudas`); ok(!(await p.getByText(/guía espiritual/i).count()), 'reflexión sin botón del guía');
+  await p.getByRole('link', { name: 'Mc 9,24' }).click(); await p.waitForTimeout(1200); console.log('cita:', (await p.locator('main').innerText()).slice(0, 200).replace(/\n/g, ' | '));
+  await p.goBack(); await p.getByRole('link', { name: 'Sal 42 (43),5' }).click(); await p.waitForTimeout(1200); console.log('salmo:', (await p.locator('main').innerText()).slice(0, 200).replace(/\n/g, ' | '));
   // El guía con IA ya no existe
   await p.goto(`${BASE}/guia`); await p.waitForTimeout(300); ok(!(await p.getByText(/guía espiritual/i).count()), 'sin guía con IA');
 
