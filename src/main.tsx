@@ -12,6 +12,7 @@ import { DiscoverHome, NewsScreen, CalendarScreen, SaintsScreen, SaintDetail, Qu
 import { TemplesScreen } from './screens/Temples.tsx';
 import { RadarScreen } from './screens/Radar.tsx';
 import { BadgesScreen, BadgeCelebration } from './screens/Badges.tsx';
+import { JournalScreen, MySaintScreen } from './screens/Extras.tsx';
 import { ProfileHome, AuthScreen, SettingsScreen, FavoritesScreen, StatsScreen, HistoryScreen, PrivacyScreen, AdminScreen, PasswordScreen } from './screens/Profile.tsx';
 
 function Router({ path }: { path: string }): ReactNode {
@@ -50,6 +51,8 @@ function Router({ path }: { path: string }): ReactNode {
       if (seg[1] === 'favoritos') return <FavoritesScreen />;
       if (seg[1] === 'estadisticas') return <StatsScreen />;
       if (seg[1] === 'insignias') return <BadgesScreen />;
+      if (seg[1] === 'santo') return <MySaintScreen />;
+      if (seg[1] === 'diario') return <JournalScreen />;
       if (seg[1] === 'historial') return <HistoryScreen />;
       if (seg[1] === 'admin') return <AdminScreen />;
       if (seg[1] === 'clave') return <PasswordScreen />;

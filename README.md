@@ -81,4 +81,6 @@ npm run check:sources   # comprueba desde tu ordenador que responden las fuentes
 - **Horarios de misas:** solo se muestran si están en OpenStreetMap (marcados «Sin confirmar») o los introduce un administrador con enlace a la fuente y fecha («Confirmado»). En OpenStreetMap suele haber pocos, así que al principio la mayoría de templos dirán «No disponible».
 - **Calendario:** calculado con el calendario general y el de España. No incluye propios diocesanos. Conviene que lo revise alguien con el Ordo en la mano.
 - **Fuentes Bricolage Grotesque y Crimson Pro:** licencia SIL OFL, incluidas en la app sin depender de Google Fonts.
+- **Intenciones del Papa (`src/data/popeIntentions.ts`):** tema de cada mes de 2026 y títulos de 2027, con enlace a [popesprayer.va](https://www.popesprayer.va/es/) para el texto completo. Hay que añadir las de 2028 cuando se publiquen.
+- **Diario espiritual:** se guarda solo en el dispositivo; no se sincroniza ni se sube.
 - **Revisión pastoral:** el examen de conciencia (`src/data/examen.ts`), las oraciones, frases, biografías y reflexiones propias se han escrito sin revisión eclesiástica. Conviene que las revise un sacerdote antes del lanzamiento.

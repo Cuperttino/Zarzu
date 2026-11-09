@@ -77,8 +77,16 @@ export async function misasRoute(url: URL): Promise<Response> {
   const kind: MisasKind = url.searchParams.get('kind') === 'adorations' ? 'adorations' : 'masses';
   const radius = Math.min(kind === 'adorations' ? 30000 : 15000, Math.max(500, Number(url.searchParams.get('radius')) || 3000));
   if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) throw new HttpError(400, 'Coordenadas no válidas.', 'bad_coords');
-  const days = madridDays();
-  const key = `${kind},${lat.toFixed(3)},${lon.toFixed(3)},${radius},${days[0]}`;
+  // Con ?date=AAAA-MM-DD se consulta solo ese día (hasta 60 días antes o después de hoy).
+  const asked = url.searchParams.get('date');
+  let days = madridDays();
+  if (asked) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(asked) || Number.isNaN(Date.parse(`${asked}T12:00:00Z`))) throw new HttpError(400, 'Fecha no válida.', 'bad_date');
+    const diff = (Date.parse(`${asked}T12:00:00Z`) - Date.parse(`${days[0]}T12:00:00Z`)) / 86_400_000;
+    if (Math.abs(diff) > 60) throw new HttpError(400, 'Solo se pueden consultar fechas de los próximos dos meses.', 'date_range');
+    days = [asked];
+  }
+  const key = `${kind},${lat.toFixed(3)},${lon.toFixed(3)},${radius},${days.join('+')}`;
   let result = cache.get(key);
   if (!result) {
     try {

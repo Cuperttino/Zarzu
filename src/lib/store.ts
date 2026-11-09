@@ -12,6 +12,9 @@ export interface Reminder { id: 'morning' | 'gospel' | 'evening'; time: string; 
 export interface Favorite { kind: 'verse' | 'prayer' | 'saint' | 'quote' | 'news' | 'place'; id: string; title: string; body?: string; link?: string; at: string }
 export interface Activity { kind: 'reading' | 'gospel' | 'prayer' | 'rosary'; ref: string; label: string; day: ISODate }
 export interface FavPlace { name: string; lat: number; lon: number }
+/** La parroquia del usuario, tal como la identifica misas.org. */
+export interface MyParish { id: number; name: string; town: string; lat: number; lon: number; url: string }
+export interface JournalEntry { text: string; updated: string }
 
 export interface State {
   name: string; onboarded: boolean;
@@ -23,11 +26,16 @@ export interface State {
   rosary: Record<string, unknown> | null;
   /** Insignias que ya se han celebrado en este dispositivo; null hasta la primera vez. */
   badgesSeen: string[] | null;
+  parish: MyParish | null;
+  /** Tu santo: nombre y día (MM-DD). */
+  mySaint: { name: string; date: string } | null;
+  /** Diario espiritual: una entrada por día. Solo se guarda en este dispositivo. */
+  journal: Record<ISODate, JournalEntry>;
 }
 const initial: State = {
   name: '', onboarded: false, settings: { theme: 'light', readingScale: 1 }, place: null,
   notifications: { enabled: false, reminders: [{ id: 'morning', time: '08:00', enabled: true }, { id: 'gospel', time: '08:30', enabled: false }, { id: 'evening', time: '22:00', enabled: false }] },
-  verses: [], favorites: [], activity: [], lastRead: null, rosary: null, badgesSeen: null,
+  verses: [], favorites: [], activity: [], lastRead: null, rosary: null, badgesSeen: null, parish: null, mySaint: null, journal: {},
 };
 const KEY = 'zarzu.v2';
 const load = (): State => { try { return { ...initial, ...JSON.parse(localStorage.getItem(KEY) ?? '{}') }; } catch { return initial; } };

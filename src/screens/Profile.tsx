@@ -13,7 +13,7 @@ const useAdmin = (uid?: string) => usePromise(async () => (uid && authAvailable(
 export function streakOf(days: Set<string>, t = today()) { let n = 0, d = days.has(t) ? t : addDays(t, -1); while (days.has(d)) { n++; d = addDays(d, -1); } return n; }
 
 export function ProfileHome() {
-  const s = useSession(), name = useStore((x) => x.name), place = useStore((x) => x.place), act = useStore((x) => x.activity), favs = useStore((x) => x.favorites), admin = useAdmin(s?.user.id);
+  const s = useSession(), name = useStore((x) => x.name), place = useStore((x) => x.place), act = useStore((x) => x.activity), favs = useStore((x) => x.favorites), mySaint = useStore((x) => x.mySaint), admin = useAdmin(s?.user.id);
   const streak = useMemo(() => streakOf(new Set(act.map((a) => a.day))), [act]);
   return <Page title={name || "Perfil"} right={<ThemeToggle className="!bg-surface" />}>
     <p className="text-[15px] text-muted">{s ? s.user.email : 'Tus datos están solo en este dispositivo'}</p>
@@ -23,6 +23,8 @@ export function ProfileHome() {
     {!authAvailable() && <div className="mt-4"><Notice>Las cuentas y la sincronización entre dispositivos se activarán cuando la app publicada se conecte a Supabase. Mientras tanto, todo se guarda en este dispositivo.</Notice></div>}
     <Section className="!mt-5"><div>
       <Row icon="heart" to="/perfil/favoritos" title="Favoritos" detail={favs.length === 1 ? '1 guardado' : `${favs.length} guardados`} />
+      <Row icon="pen" to="/perfil/diario" title="Mi diario" detail="Solo lo ves tú" />
+      <Row icon="saint" to="/perfil/santo" title="Tu santo" detail={mySaint ? mySaint.name : 'Elige tu santo'} />
       <Row icon="star" to="/perfil/insignias" title="Insignias" detail={`${earned(progressOf(act)).length} de ${BADGES.length} conseguidas`} />
       <Row icon="flame" to="/perfil/estadisticas" title="Estadísticas" detail="Tu lectura y tu oración" />
       <Row icon="book" to="/perfil/historial" title="Historial" detail="Lecturas y oraciones" />

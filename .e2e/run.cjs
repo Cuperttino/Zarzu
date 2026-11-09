@@ -24,7 +24,7 @@ async function ctx(browser, opts = {}) {
       if (u.pathname === '/api/news') return opts.newsDown ? r.abort() : r.fulfill({ json: NEWS });
       if (u.pathname === '/api/misas') {
         const f = (d) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
-        const d0 = f(new Date()), d1 = f(new Date(Date.now() + 86400000));
+        const dt = u.searchParams.get('date'), d0 = dt || f(new Date()), d1 = dt ? null : f(new Date(Date.now() + 86400000));
         const soon = new Date(Date.now() + 40 * 60000), hm = `${String(soon.getHours()).padStart(2, '0')}:${String(soon.getMinutes()).padStart(2, '0')}`;
         if (u.searchParams.get('kind') === 'adorations') {
           const h0 = new Date(Date.now() - 30 * 60000), h1 = new Date(Date.now() + 60 * 60000), f2 = (d) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
@@ -33,8 +33,8 @@ async function ctx(browser, opts = {}) {
             { id: 4, name: 'Capilla de adoración perpetua', address: 'Calle Santísimo', town: 'Motril', lat: 36.7500, lon: -3.5200, photo: null, url: 'https://misas.org/p/perpetua/' + d0, masses: {}, adorations: { [d0]: [{ type: 'perpetua', begin: '00:00', end: '00:00', note: '' }], [d1]: [{ type: 'perpetua', begin: '00:00', end: '00:00', note: '' }] } },
           ] } });
         }
-        return r.fulfill({ json: { source: 'misas.org', dates: [d0, d1], fetchedAt: new Date().toISOString(), churches: [
-          { id: 1, name: 'Iglesia de la Victoria (misas.org)', address: 'Plaza de San Agustín', town: 'Motril', lat: 36.7439, lon: -3.5161, photo: null, url: 'https://misas.org/p/prueba/' + d0, masses: { [d0]: [hm], [d1]: ['08:30', '19:30'] }, adorations: {} },
+        return r.fulfill({ json: { source: 'misas.org', dates: [d0, d1].filter(Boolean), fetchedAt: new Date().toISOString(), churches: [
+          { id: 1, name: 'Iglesia de la Victoria (misas.org)', address: 'Plaza de San Agustín', town: 'Motril', lat: 36.7439, lon: -3.5161, photo: null, url: 'https://misas.org/p/prueba/' + d0, masses: dt ? { [d0]: ['10:00', '12:00'] } : { [d0]: [hm], [d1]: ['08:30', '19:30'] }, adorations: {} },
           { id: 2, name: 'Capilla solo en misas.org', address: 'Calle Prueba', town: 'Motril', lat: 36.7480, lon: -3.5150, photo: null, url: 'https://misas.org/p/prueba2/' + d0, masses: {}, adorations: {} },
         ] } });
       }
@@ -115,7 +115,11 @@ const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(
   await p.getByText('Iglesia de la Victoria (misas.org)').first().waitFor(); ok(await p.getByText('Horario de misas.org').count() > 0, 'horarios de misas.org en el radar'); await p.getByText('Sin misa hoy ni mañana').waitFor(); await p.getByText('Con horario por revisar').waitFor(); await p.getByText('Sin horario todavía').waitFor();
   await p.waitForTimeout(700); await shot('19-radar'); await p.screenshot({ path: '.e2e/shots/19c-radar-entero.png', fullPage: true });
   await p.getByRole('button', { name: /Iglesia de la Victoria \(misas.org\), a/ }).first().click(); await p.getByRole('button', { name: 'Ver en misas.org' }).waitFor(); await p.getByRole('article').getByText('Mañana', { exact: true }).waitFor();
+  await p.getByRole('button', { name: 'Fijar como mi parroquia' }).click(); await p.getByRole('button', { name: 'Es tu parroquia' }).waitFor();
   await p.waitForTimeout(700); await shot('19d-radar-misas');
+  { const f3 = new Date(Date.now() + 3 * 86400000), ds = `${f3.getFullYear()}-${String(f3.getMonth() + 1).padStart(2, '0')}-${String(f3.getDate()).padStart(2, '0')}`;
+    await p.getByLabel('Elegir día').fill(ds); await p.getByRole('heading', { name: /^Misas del / }).waitFor(); await p.getByText('12:00').first().waitFor(); ok(true, 'radar en otro día');
+    await p.waitForTimeout(700); await shot('19g-radar-otro-dia'); await p.getByRole('button', { name: 'Hoy y mañana' }).click(); await p.getByRole('heading', { name: 'Próximas misas' }).waitFor(); }
   await p.getByRole('button', { name: /Ermita de prueba/ }).last().click(); await p.getByText('¿El horario está mal?').first().waitFor();
   await p.getByRole('tab', { name: 'Adoración', exact: true }).click(); await p.getByRole('heading', { name: 'Adoración hoy y mañana' }).waitFor(); await p.getByText(/Ahora, hasta las/).first().waitFor(); ok(await p.getByText('Parroquia con adoración').count() > 0, 'adoración en el radar');
   await p.waitForTimeout(700); await shot('19e-radar-adoracion');
@@ -136,6 +140,18 @@ const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(
   await p.goto(`${BASE}/biblia`); await p.getByRole('heading', { name: 'La Biblia' }).waitFor();
   { const before = await p.evaluate(() => history.length); for (let k = 0; k < 4; k++) await p.getByRole('navigation').getByRole('link', { name: 'Biblia' }).click(); await p.waitForTimeout(400);
     ok(await p.evaluate(() => history.length) === before && !(await p.evaluate(() => document.querySelector('.nav-forward'))), 'tocar la pestaña activa no hace nada'); }
+
+  // Mi parroquia, cuenta atrás e intención del Papa en Inicio
+  await p.goto(BASE); await p.getByRole('region', { name: 'Mi parroquia' }).getByText('Iglesia de la Victoria (misas.org)').waitFor();
+  ok(await p.getByRole('region', { name: 'Cuenta atrás' }).getByText(/días|¡Hoy!/).count() > 0, 'cuenta atrás'); ok(await p.getByText(/Intención del Papa para/).count() === 1, 'intención del Papa');
+  await p.getByRole('region', { name: 'Mi parroquia' }).scrollIntoViewIfNeeded(); await p.waitForTimeout(800); await shot('23-mi-parroquia');
+  // Tu santo
+  await p.goto(`${BASE}/perfil/santo`); await p.getByLabel('Nombre del santo').fill('Santiago'); await p.getByRole('button', { name: /Santiago.*25 de julio/ }).first().click(); await p.getByText(/Faltan \d+ días|Es hoy/).waitFor(); ok(true, 'tu santo');
+  await p.waitForTimeout(600); await shot('24-tu-santo');
+  // Diario privado: se guarda en el dispositivo y no se sube
+  await p.goto(`${BASE}/perfil/diario`); await p.getByLabel('¿Qué te ha dicho Dios hoy?').fill('Gracias por este día de prueba.'); await p.getByText('Guardado en este dispositivo').waitFor();
+  await p.reload(); ok(await p.getByLabel('¿Qué te ha dicho Dios hoy?').inputValue() === 'Gracias por este día de prueba.', 'diario guardado');
+  ok(!JSON.stringify(await (await fetch(`${SB}/__dump`)).json()).includes('día de prueba'), 'diario no se sube'); await p.waitForTimeout(400); await shot('25-diario');
 
   // Examen de conciencia: marca, llega al final y no guarda nada
   await p.goto(`${BASE}/oracion/examen`); await p.getByRole('button', { name: 'Empezar' }).click();

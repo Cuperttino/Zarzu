@@ -199,3 +199,19 @@ test('insignias: racha más larga y progreso', () => {
   for (const id of ['llama', 'semana', 'rosario1', 'cap10', 'evangelista']) assert.ok(ids.includes(id), id);
   assert.ok(!ids.includes('mes'));
 });
+
+import { countdowns, findSaints } from '../src/lib/extras.ts';
+test('cuenta atrás litúrgica', () => {
+  const c = countdowns('2026-11-09', { name: 'Santiago', date: '07-25' });
+  assert.equal(c[0].id, 'adviento'); assert.equal(c[0].date, '2026-11-29'); assert.equal(c[0].days, 20);
+  assert.equal(c.find((x) => x.id === 'navidad')!.days, 46);
+  assert.equal(c.find((x) => x.id === 'pascua')!.date, '2027-03-28');
+  assert.equal(c.find((x) => x.id === 'santo')!.date, '2027-07-25');
+  assert.equal(countdowns('2026-12-25').find((x) => x.id === 'navidad')!.days, 0);
+});
+test('tu santo: búsqueda por nombre', () => {
+  const r = findSaints('santiago');
+  assert.ok(r.some((s) => s.date === '07-25'), JSON.stringify(r));
+  assert.ok(findSaints('teresa').some((s) => s.date === '10-15'));
+  assert.deepEqual(findSaints('xy'), []);
+});

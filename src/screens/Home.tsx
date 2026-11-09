@@ -1,3 +1,4 @@
+import { CountdownStrip, MyParishCard, PopeIntention, SaintCongrats } from './Extras.tsx';
 import { useEffect, useState } from 'react';
 import { FavoriteButton, Icon, Input, Link, LitDot, Mark, ShareButton, ThemeToggle, Tile, Wordmark } from '../components/ui.tsx';
 import { COLOR_LABEL, litDay, upcoming, type LitDay } from '../lib/calendar.ts';
@@ -57,6 +58,7 @@ export function Home() {
       </div>
     </section>
 
+    <SaintCongrats />
     {ann && <p className="mt-6 rounded-[22px] bg-surface p-4 text-[15px] leading-snug">{ann}</p>}
 
     <section aria-label="Versículo del día" className="mt-12">
@@ -71,12 +73,15 @@ export function Home() {
       </>}
     </section>
 
+    <MyParishCard />
+
     <div className="mt-10 grid grid-cols-2 gap-2.5">
       <GospelTeaser date={d} />
       <Tile to="/descubrir/misas" icon="target" title="Radar de misas" sub="Las misas que empiezan pronto cerca de ti" className="col-span-2 c-sun" />
       <Tile to="/oracion/rosario" icon="rosary" title="Rosario" sub={myst.name.replace('Misterios ', 'Hoy, ')} className="c-ink" />
       <Tile to="/biblia" icon="book" title="Biblia" sub="Los 73 libros" />
-      <Tile to="/oracion" icon="pray" title="Oraciones" sub="Para cada momento" className="col-span-2" />
+      <Tile to="/oracion" icon="pray" title="Oraciones" sub="Para cada momento" />
+      <Tile to="/perfil/diario" icon="pen" title="Mi diario" sub="¿Qué te ha dicho Dios hoy?" />
     </div>
 
     <section className="mt-12">
@@ -85,12 +90,16 @@ export function Home() {
       <p className="mt-4 font-serif text-[1.32rem] leading-[1.14] text-gold">{msg}</p>
     </section>
 
+    <PopeIntention />
+
     <section className="mt-12">
       <div className="mb-3 flex items-baseline justify-between"><h2 className="text-[1.6rem] leading-tight">Noticias de la Iglesia</h2><Link to="/descubrir/noticias" className="shrink-0 pl-2 text-sm text-muted">Ver todas</Link></div>
       {news.stale && <p className="mb-2 text-sm text-warn">Sin conexión: pueden no ser las más recientes.</p>}
       {news.data ? <div className="no-bar -mx-5 flex snap-x gap-2.5 overflow-x-auto px-5 pb-1">{news.data.items.slice(0, 6).map((n) => <div key={n.id} className="snap-card w-[78%] max-w-80 shrink-0 snap-start"><NewsCard item={n} /></div>)}</div>
         : news.loading ? <p className="pulse-soft h-48 rounded-[22px] bg-surface" /> : <p className="text-[15px] text-muted">Las noticias no están disponibles ahora. {news.error}</p>}
     </section>
+
+    <CountdownStrip />
 
     <section className="mt-12">
       <div className="mb-1 flex items-baseline justify-between"><h2 className="text-[1.6rem] leading-tight">Lo que viene</h2><Link to="/descubrir/calendario" className="shrink-0 pl-2 text-sm text-muted">Calendario</Link></div>
