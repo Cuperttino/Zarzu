@@ -72,21 +72,21 @@ export function TemplesScreen() {
       <Button kind="ghost" aria-label="Buscar"><Icon name="search" size={18} /></Button>
       <Button type="button" kind="primary" aria-label="Usar mi ubicación" title="Usar mi ubicación" onClick={locate}><Icon name="target" size={18} /></Button>
     </form>
-    {options.length > 0 && <ul className="mt-2 overflow-hidden rounded-xl border border-line bg-surface">{options.map((o) => <li key={`${o.lat},${o.lon}`}><button className="w-full border-b border-line p-3 text-left text-sm last:border-0 hover:bg-sand" onClick={() => { setOrigin(o); setOptions([]); setMapCenter(null); }}>{o.name}</button></li>)}</ul>}
+    {options.length > 0 && <ul className="list sheet mt-2">{options.map((o) => <li key={`${o.lat},${o.lon}`}><button className="hoverable w-full px-4 py-3 text-left text-[14.5px]" onClick={() => { setOrigin(o); setOptions([]); setMapCenter(null); }}>{o.name}</button></li>)}</ul>}
     {err && <div className="mt-3"><Notice tone="warn">{err}</Notice></div>}
     {busy && <Spinner label={busy} />}
-    {!origin && !busy && !err && <div className="mt-4"><h2 className="text-[1.84rem] leading-[1.02]">Encuentra dónde ir a misa o rezar</h2><p className="mt-2 text-[15px] leading-snug text-muted">Solo pedimos tu ubicación si pulsas el botón, y no la guardamos. También puedes buscar por localidad o código postal.</p><Button className="mt-4" onClick={locate}><Icon name="target" size={18} />Usar mi ubicación</Button></div>}
+    {!origin && !busy && !err && <div className="rise mt-8"><h2 className="text-[1.6rem] font-semibold leading-tight tracking-[-.025em]">Encuentra dónde ir a misa o rezar</h2><p className="mt-2 text-[15px] leading-snug text-muted">Solo pedimos tu ubicación si pulsas el botón, y no la guardamos. También puedes buscar por localidad o código postal.</p><Button className="mt-4" onClick={locate}><Icon name="target" size={18} />Usar mi ubicación</Button></div>}
     {origin && <>
       <div className="no-bar -mx-5 mt-3 flex gap-2 overflow-x-auto px-5">{RADII.map((r) => <Chip key={r} active={radius === r} onClick={() => setRadius(r)}>{r} km</Chip>)}</div>
       {kinds.length > 1 && <div className="no-bar -mx-5 mt-2 flex gap-2 overflow-x-auto px-5"><Chip active={!kind} onClick={() => setKind('')}>Todos</Chip>{kinds.map((k) => <Chip key={k} active={kind === k} onClick={() => setKind(k)}>{KIND[k]}</Chip>)}</div>}
-      <div className="mt-3 h-[42dvh] min-h-64 overflow-hidden rounded-[22px]"><MapView tileUrl={config().tileUrl} center={mapCenter ?? origin} zoom={radius <= 2 ? 14.5 : radius <= 5 ? 13 : radius <= 10 ? 12 : 11} me={me} selected={sel} onSelect={setSel} markers={sorted.map(({ p }) => ({ id: p.id, lat: p.lat, lon: p.lon, label: p.name }))} /></div>
-      <div className="mt-3 flex items-center justify-between gap-2 text-sm text-muted"><span className="min-w-0 truncate">{list ? `${sorted.length} ${sorted.length === 1 ? 'templo' : 'templos'} ${origin.name === 'Tu ubicación' ? 'cerca de ti' : `cerca de ${origin.name.split(',')[0]}`}` : ''}</span>
-        <button className="shrink-0 text-gold" onClick={() => saveProfile({ place: fav && fav.lat === origin.lat ? null : { name: origin.name.split(',').slice(0, 2).join(','), lat: origin.lat, lon: origin.lon } })}>{fav && fav.lat === origin.lat ? 'Localidad favorita' : 'Guardar localidad'}</button></div>
+      <div className="mt-3 h-[42dvh] min-h-64 overflow-hidden rounded-2xl border border-line"><MapView tileUrl={config().tileUrl} center={mapCenter ?? origin} zoom={radius <= 2 ? 14.5 : radius <= 5 ? 13 : radius <= 10 ? 12 : 11} me={me} selected={sel} onSelect={setSel} markers={sorted.map(({ p }) => ({ id: p.id, lat: p.lat, lon: p.lon, label: p.name }))} /></div>
+      <div className="mt-3 flex items-center justify-between gap-2 text-[13.5px] text-muted"><span className="min-w-0 truncate">{list ? `${sorted.length} ${sorted.length === 1 ? 'templo' : 'templos'} ${origin.name === 'Tu ubicación' ? 'cerca de ti' : `cerca de ${origin.name.split(',')[0]}`}` : ''}</span>
+        <button className="min-h-10 shrink-0 font-medium text-gold" onClick={() => saveProfile({ place: fav && fav.lat === origin.lat ? null : { name: origin.name.split(',').slice(0, 2).join(','), lat: origin.lat, lon: origin.lon } })}>{fav && fav.lat === origin.lat ? 'Localidad favorita' : 'Guardar localidad'}</button></div>
       {selected && <PlaceCard place={selected.p} distance={selected.d} onClose={() => setSel(null)} />}
-      <ul className="mt-2">{sorted.map(({ p, d }) => <li key={p.id}><button onClick={() => { setSel(p.id); setMapCenter({ lat: p.lat, lon: p.lon }); }} className="flex w-full items-start gap-3 border-b border-line py-3 text-left">
-        <span className="min-w-0 flex-1"><span className="block font-serif text-[1.08rem] leading-[1.1]">{p.name}</span><span className="text-sm text-muted">{KIND[p.kind]}. {fmtKm(d)}</span>{p.mass.status !== 'unavailable' && <StatusDot s={p.mass} />}</span><Icon name="chevron" size={18} className="mt-1 text-muted" /></button></li>)}</ul>
+      <ul className="mt-2">{sorted.map(({ p, d }) => <li key={p.id}><button onClick={() => { setSel(p.id); setMapCenter({ lat: p.lat, lon: p.lon }); }} className={`-mx-2 flex w-[calc(100%+1rem)] items-start gap-3 rounded-lg border-b border-line px-2 py-3 text-left transition-colors ${sel === p.id ? 'bg-surface' : 'hoverable'}`}>
+        <span className="min-w-0 flex-1"><span className="block text-[15px] font-medium leading-snug">{p.name}</span><span className="text-[13px] text-muted">{KIND[p.kind]}. {fmtKm(d)}</span>{p.mass.status !== 'unavailable' && <StatusDot s={p.mass} />}</span><Icon name="chevron" size={16} className="mt-1 text-muted/70" /></button></li>)}</ul>
       {list && !sorted.length && !busy && <p className="mt-4 text-sm text-muted">Ningún templo con estos filtros. Prueba a aumentar la distancia.</p>}
-      <p className="mt-6 text-xs leading-relaxed text-muted">Datos de OpenStreetMap, un mapa colaborativo: puede faltar algún templo o algún dato estar desactualizado.</p>
+      <p className="mt-10 border-t border-line pt-4 text-xs leading-relaxed text-muted">Datos de OpenStreetMap, un mapa colaborativo: puede faltar algún templo o algún dato estar desactualizado.</p>
     </>}
   </Page>;
 }
@@ -94,7 +94,7 @@ const StatusDot = ({ s }: { s: ScheduleInfo }) => <span className={`mt-0.5 block
 
 function Schedule({ title, s, website, name }: { title: string; s: ScheduleInfo; website: string | null; name: string }) {
   return <div className="border-t border-line py-3">
-    <h4 className="font-sans text-sm font-medium">{title}</h4>
+    <h4 className="text-[13px] font-medium text-muted">{title}</h4>
     {s.status === 'unavailable' ? <p className="mt-1 text-sm text-muted">No disponible. No mostramos horarios sin una fuente. {website ? <a className="text-gold underline" target="_blank" rel="noreferrer" href={website}>Consultar en su web</a> : <a className="text-gold underline" target="_blank" rel="noreferrer" href={`https://www.google.com/search?q=${encodeURIComponent(`${name} horario de misas`)}`}>Buscar en la web</a>}</p>
       : <>
         <p className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs ${s.status === 'verified' ? 'bg-ok/15 text-ok' : 'bg-warn/15 text-warn'}`}>{s.status === 'verified' ? 'Confirmado' : 'Sin confirmar'}</p>
@@ -104,11 +104,11 @@ function Schedule({ title, s, website, name }: { title: string; s: ScheduleInfo;
   </div>;
 }
 export function PlaceCard({ place: p, distance, onClose }: { place: Place; distance: number; onClose: () => void }) {
-  return <article className="sheet mt-3 overflow-hidden rounded-[22px] bg-surface">
+  return <article className="sheet mt-3 overflow-hidden rounded-2xl border border-line bg-paper shadow-[var(--shadow-float)]">
     {p.photo && <img src={p.photo} alt={p.name} loading="lazy" className="h-48 w-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />}
     <div className="p-4">
-      <div className="flex items-start gap-2"><div className="min-w-0 flex-1"><p className="text-sm text-gold">{KIND[p.kind]}. A {fmtKm(distance)}</p><h3 className="mt-0.5 text-xl leading-snug">{p.name}</h3></div>
-        <span className="-mr-2 -mt-2 flex text-muted"><FavoriteButton fav={{ kind: 'place', id: p.id, title: p.name, body: p.address ?? undefined, link: p.osmUrl }} /><button aria-label="Cerrar ficha" className="grid size-11 place-items-center" onClick={onClose}><Icon name="close" size={18} /></button></span></div>
+      <div className="flex items-start gap-2"><div className="min-w-0 flex-1"><p className="text-[13px] font-medium text-gold">{KIND[p.kind]}. A {fmtKm(distance)}</p><h3 className="mt-0.5 text-[1.25rem] font-semibold leading-snug tracking-[-.015em]">{p.name}</h3></div>
+        <span className="-mr-2 -mt-2 flex text-muted"><FavoriteButton fav={{ kind: 'place', id: p.id, title: p.name, body: p.address ?? undefined, link: p.osmUrl }} /><button aria-label="Cerrar ficha" className="hoverable grid size-11 place-items-center rounded-full" onClick={onClose}><Icon name="close" size={18} /></button></span></div>
       <p className="mt-1 text-[15px] text-muted">{p.address ?? 'Dirección no disponible'}</p>
       <div className="mt-3 flex flex-wrap gap-2">
         <a href={directionsUrl(p.lat, p.lon, p.name)} target="_blank" rel="noreferrer"><Button><Icon name="route" size={18} />Cómo llegar</Button></a>
@@ -117,7 +117,7 @@ export function PlaceCard({ place: p, distance, onClose }: { place: Place; dista
       </div>
       <div className="mt-4">
         <Schedule title="Horarios de misas" s={p.mass} website={p.website} name={p.name} />
-        {p.mass.status !== 'verified' && <a href="https://misas.org/buscar/misa" target="_blank" rel="noopener" className="mb-1 flex min-h-11 items-center gap-1.5 text-[15px] font-bold text-gold"><Icon name="search" size={16} />Buscar sus misas en misas.org</a>}
+        {p.mass.status !== 'verified' && <a href="https://misas.org/buscar/misa" target="_blank" rel="noopener" className="mb-1 flex min-h-11 items-center gap-1.5 text-[14.5px] font-medium text-gold"><Icon name="search" size={16} />Buscar sus misas en misas.org</a>}
         <ReportForm place={p} />
         <Schedule title="Confesiones" s={p.confession} website={p.website} name={p.name} />
         <Schedule title="Horario de apertura" s={p.opening} website={p.website} name={p.name} />
@@ -130,22 +130,22 @@ export function PlaceCard({ place: p, distance, onClose }: { place: Place; dista
 function WeekTable({ text }: { text: string | null }) {
   const w = parseSchedule(text);
   if (!w) return <p className="mt-1 whitespace-pre-line text-[15px] leading-relaxed">{text}</p>;
-  return <table className="mt-2 w-full text-[15px]"><tbody>{weeklyRows(w).map((r) => <tr key={r.days} className="border-b border-line last:border-0"><th scope="row" className="py-1.5 pr-3 text-left font-normal text-muted">{r.days}</th><td className="py-1.5 text-right font-bold">{r.times}</td></tr>)}</tbody></table>;
+  return <table className="mt-2 w-full text-[15px]"><tbody>{weeklyRows(w).map((r) => <tr key={r.days} className="border-b border-line last:border-0"><th scope="row" className="py-1.5 pr-3 text-left font-normal text-muted">{r.days}</th><td className="tabular py-1.5 text-right font-semibold">{r.times}</td></tr>)}</tbody></table>;
 }
 
 /** Los horarios que envían los usuarios no se publican hasta que un administrador los comprueba. */
 function ReportForm({ place: p }: { place: Place }) {
   const [open, setOpen] = useState(false), [schedule, setSchedule] = useState(''), [src, setSrc] = useState(''), [note, setNote] = useState(''), [state, setState] = useState<'' | 'busy' | 'ok' | string>('');
-  if (!open) return <button className="mb-1 min-h-11 text-[15px] font-bold text-gold" onClick={() => setOpen(true)}>{p.mass.status === 'unavailable' ? '¿Conoces el horario de misas? Envíanoslo' : '¿El horario está mal? Envíanos el correcto'}</button>;
+  if (!open) return <button className="mb-1 min-h-11 text-[14.5px] font-medium text-gold" onClick={() => setOpen(true)}>{p.mass.status === 'unavailable' ? '¿Conoces el horario de misas? Envíanoslo' : '¿El horario está mal? Envíanos el correcto'}</button>;
   if (!authAvailable()) return <Notice>Para enviar horarios hace falta que la app tenga cuentas activadas.</Notice>;
-  if (!getSession()) return <Notice action={<Link to="/perfil/entrar" className="font-bold text-gold underline">Entrar o crear cuenta</Link>}>Para enviar un horario necesitas una cuenta. Así evitamos horarios falsos.</Notice>;
+  if (!getSession()) return <Notice action={<Link to="/perfil/entrar" className="font-medium text-gold underline">Entrar o crear cuenta</Link>}>Para enviar un horario necesitas una cuenta. Así evitamos horarios falsos.</Notice>;
   if (state === 'ok') return <Notice>Gracias. Lo revisaremos antes de publicarlo.</Notice>;
-  return <form className="mb-2 space-y-2 rounded-2xl bg-paper p-3" onSubmit={async (e) => {
+  return <form className="sheet mb-2 space-y-2 rounded-xl bg-surface p-3" onSubmit={async (e) => {
     e.preventDefault(); setState('busy');
     try { await rest('mass_reports', { method: 'POST', prefer: 'return=minimal', body: { osm_ref: p.id, church_name: p.name, schedule: schedule.trim(), source_url: src.trim() || null, note: note.trim() || null } }); setState('ok'); }
     catch (x) { setState((x as Error).message); }
   }}>
-    <label className="block text-sm font-bold">Horario de misas<textarea required minLength={4} maxLength={600} rows={3} value={schedule} onChange={(e) => setSchedule(e.target.value)} placeholder={'Lunes a sábado 19:00\nDomingos 10:00 y 12:00'} className="mt-1 w-full rounded-xl border border-line bg-surface p-3 text-[16px] font-normal text-ink" /></label>
+    <label className="block text-[13px] font-medium text-muted">Horario de misas<textarea required minLength={4} maxLength={600} rows={3} value={schedule} onChange={(e) => setSchedule(e.target.value)} placeholder={'Lunes a sábado 19:00\nDomingos 10:00 y 12:00'} className="mt-1 w-full rounded-xl border border-line bg-paper p-3 text-[16px] font-normal text-ink outline-none transition-[border-color,box-shadow] focus:border-pop focus:shadow-[0_0_0_4px_var(--pop-soft)]" /></label>
     <Input type="url" value={src} onChange={(e) => setSrc(e.target.value)} placeholder="Enlace donde lo has visto (opcional)" aria-label="Enlace a la fuente" />
     <Input value={note} maxLength={500} onChange={(e) => setNote(e.target.value)} placeholder="Nota: lo vi en el tablón, en verano cambia…" aria-label="Nota" />
     {state && state !== 'busy' && <Notice tone="error">{state}</Notice>}

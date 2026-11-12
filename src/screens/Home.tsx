@@ -1,6 +1,6 @@
 import { CountdownStrip, MyParishCard, PopeIntention, SaintCongrats } from './Extras.tsx';
 import { useEffect, useState } from 'react';
-import { FavoriteButton, Icon, Input, Link, LitDot, Mark, ShareButton, ThemeToggle, Tile, Wordmark } from '../components/ui.tsx';
+import { FavoriteButton, Icon, Input, Link, List, Mark, Ribbon, Row, ShareButton, ThemeToggle, Wordmark } from '../components/ui.tsx';
 import { COLOR_LABEL, litDay, upcoming, type LitDay } from '../lib/calendar.ts';
 import { longDate, parse, shortDate, today } from '../lib/dates.ts';
 import { dailyVerse, getState, logActivity, saveProfile, setState, useStore } from '../lib/store.ts';
@@ -40,73 +40,77 @@ export function Home() {
   const streak = streakOf(new Set(activity.map((a) => a.day)));
   const done = activity.some((a) => a.ref === `dia-${d}`);
 
-  return <div className="mx-auto w-full max-w-2xl px-5 pb-28 md:pb-12">
-    <section className="soft-hero relative -mx-5 overflow-hidden rounded-b-[36px] px-5 pb-6 md:mt-4 md:rounded-[36px]">
-      <Mark className="flicker absolute -right-5 top-20 h-44 w-auto text-flame" />
-      <header className="safe-t relative flex min-h-12 items-center justify-between">
-        <Wordmark className="md:invisible" />
-        <div className="flex items-center gap-2"><ThemeToggle />
-        <Link to="/perfil/estadisticas" label={`Racha: ${streak} ${streak === 1 ? 'día' : 'días'}`} className="press flex min-h-10 items-center gap-1 rounded-full bg-paper px-3 font-bold text-ink"><Icon name="flame" size={20} fill={streak > 0} className="text-flame" />{streak}</Link></div>
-      </header>
-      <div className="relative mt-8">
-        <p className="text-[15px] text-muted first-letter:uppercase">{longDate(d)}</p>
-        <h1 className="mt-1 max-w-[80%] text-[2.9rem] leading-[1]">{greeting()}{name ? <>,<br />{name}</> : ''}</h1>
-        <p className="mt-5 flex items-start gap-2 text-[1.08rem] font-bold leading-[1.2]"><LitDot color={lit.color} className="mt-1 size-3 ring-2 ring-paper" />{lit.title}</p>
-        <p className="mt-0.5 pl-5 text-[15px] text-muted">{lit.seasonLabel}. Color {COLOR_LABEL[lit.color].toLowerCase()}.</p>
-        {saint && <Link to={`/descubrir/santos/${encodeURIComponent(saint)}`} className="block min-h-8 pl-5 text-[15px] text-muted">Hoy recordamos a {saint}<Icon name="chevron" size={14} className="ml-0.5 inline align-[-2px]" /></Link>}
-        <button disabled={!v} onClick={() => setStories(true)} className="press mt-4 flex min-h-14 w-full items-center justify-between rounded-full bg-pop pl-6 pr-2 text-[17px] font-extrabold text-white disabled:opacity-50">{done ? 'Volver a ver tu día' : 'Empieza tu día'}<span className="grid size-10 place-items-center rounded-full bg-paper text-gold"><Icon name={done ? 'check' : 'chevron'} size={19} /></span></button>
+  return <div className="mx-auto w-full max-w-2xl px-5 pb-28 md:px-8 md:pb-16">
+    <header className="safe-t flex min-h-12 items-center justify-between">
+      <Wordmark className="md:invisible" />
+      <div className="flex items-center gap-1"><ThemeToggle />
+        <Link to="/perfil/estadisticas" label={`Racha: ${streak} ${streak === 1 ? 'día' : 'días'}`} className="press hoverable flex min-h-9 items-center gap-1.5 rounded-full border border-line px-3 text-[14px] font-semibold tabular"><Icon name="flame" size={16} fill={streak > 0} className={streak ? 'text-flame' : 'text-muted'} />{streak}</Link></div>
+    </header>
+
+    <section className="mt-8 md:mt-10" aria-label="Hoy">
+      <p className="rise text-[14px] font-medium text-muted first-letter:uppercase">{longDate(d)}</p>
+      <h1 className="rise mt-1 text-[2.25rem] leading-[1.08] tracking-[-.03em] md:text-[2.75rem]" style={{ animationDelay: '40ms' }}>{greeting()}{name ? `, ${name}` : ''}</h1>
+      <div className="rise mt-5 flex gap-3" style={{ animationDelay: '80ms' }}>
+        <Ribbon color={lit.color} className="mt-[3px]" />
+        <div className="min-w-0">
+          <Link to="/liturgia" className="block text-[15.5px] font-medium leading-snug hover:underline">{lit.title}</Link>
+          <p className="text-[14px] leading-snug text-muted">{lit.seasonLabel}. Color {COLOR_LABEL[lit.color].toLowerCase()}.{saint && <> Hoy recordamos a <Link to={`/descubrir/santos/${encodeURIComponent(saint)}`} className="text-ink-2 underline decoration-line underline-offset-2 hover:decoration-muted">{saint}</Link>.</>}</p>
+        </div>
       </div>
+      <button disabled={!v} onClick={() => setStories(true)} className="press rise mt-6 flex min-h-[3.25rem] w-full items-center justify-between rounded-xl bg-pop px-5 text-[15.5px] font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,.14)] transition-[filter] hover:brightness-110 disabled:opacity-50" style={{ animationDelay: '120ms' }}>
+        <span>{done ? 'Volver a ver tu día' : 'Empieza tu día'}</span><span className="flex items-center gap-2 text-[13px] font-medium text-white/75">{done ? <><Icon name="check" size={16} />Hecho</> : <>5 pasos · 3 min<Icon name="chevron" size={16} /></>}</span>
+      </button>
     </section>
 
     <SaintCongrats />
-    {ann && <p className="mt-6 rounded-[22px] bg-surface p-4 text-[15px] leading-snug">{ann}</p>}
+    {ann && <p className="mt-6 rounded-xl bg-surface p-4 text-[15px] leading-snug">{ann}</p>}
 
-    <section aria-label="Versículo del día" className="mt-12">
-      <div className="flex items-baseline justify-between gap-2"><h2 className="flex items-center gap-1 font-sans text-sm font-bold tracking-normal text-gold"><Icon name="book" size={16} />Versículo de hoy</h2><Link to="/biblia/versiculos" className="text-sm text-muted">Anteriores</Link></div>
-      {verse.loading && <p className="pulse-soft mt-3 h-32 rounded-[22px] bg-surface" />}
+    <section aria-label="Versículo del día" className="reveal mt-12">
+      <div className="flex items-baseline justify-between gap-2"><h2 className="text-[13px] font-medium tracking-normal text-muted">Versículo de hoy</h2><Link to="/biblia/versiculos" className="text-[13px] font-medium text-gold">Anteriores</Link></div>
+      {verse.loading && <p className="pulse-soft mt-3 h-28 rounded-xl" />}
       {verse.error && <p className="mt-3 text-[15px] text-muted">No se ha podido cargar el versículo. Abre la app con conexión.</p>}
       {v && <>
-        <blockquote className="mt-2 font-serif text-[1.88rem] leading-[1.08] tracking-[-.012em]">{v.text}</blockquote>
-        <div className="mt-3 flex items-center justify-between"><Link to={`/biblia/${v.book}/${v.c}?v=${v.v}`} className="font-bold">{v.ref}</Link>
+        <blockquote className="scripture mt-3 text-[1.6rem] leading-[1.28] text-ink md:text-[1.8rem]">{v.text}</blockquote>
+        <div className="mt-3 flex items-center justify-between"><Link to={`/biblia/${v.book}/${v.c}?v=${v.v}`} className="text-[14.5px] font-semibold hover:underline">{v.ref}</Link>
           <span className="-mr-2 flex text-muted"><FavoriteButton fav={{ kind: 'verse', id: v.id, title: v.ref, body: v.text, link: `/biblia/${v.book}/${v.c}?v=${v.v}` }} /><ShareButton text={v.text} reference={v.ref} kicker="Versículo de hoy" /></span></div>
-        <p className="text-[15px] leading-snug text-muted">{reflectionFor(v)}</p>
+        <p className="mt-1 text-[14.5px] leading-relaxed text-muted">{reflectionFor(v)}</p>
       </>}
     </section>
 
-    <MyParishCard />
-
-    <div className="mt-10 grid grid-cols-2 gap-2.5">
+    <div className="mt-10 grid gap-3">
       <GospelTeaser date={d} />
-      <Tile to="/descubrir/misas" icon="target" title="Radar de misas" sub="Las misas que empiezan pronto cerca de ti" className="col-span-2 c-sun" />
-      <Tile to="/oracion/rosario" icon="rosary" title="Rosario" sub={myst.name.replace('Misterios ', 'Hoy, ')} className="c-ink" />
-      <Tile to="/biblia" icon="book" title="Biblia" sub="Los 73 libros" />
-      <Tile to="/oracion" icon="pray" title="Oraciones" sub="Para cada momento" />
-      <Tile to="/perfil/diario" icon="pen" title="Mi diario" sub="¿Qué te ha dicho Dios hoy?" />
+      <List>
+        <Row to="/descubrir/misas" icon="target" title="Radar de misas" detail="Misas y adoración cerca de ti" />
+        <Row to="/oracion/rosario" icon="rosary" title="Rosario" detail={myst.name.replace('Misterios ', 'Hoy, misterios ')} />
+        <Row to="/perfil/diario" icon="pen" title="Mi diario" detail="¿Qué te ha dicho Dios hoy?" />
+      </List>
     </div>
 
-    <section className="mt-12">
-      <h2 className="text-[1.6rem] leading-tight">Para empezar hoy</h2>
-      <p className="reading mt-2">{morning}</p>
-      <p className="mt-4 font-serif text-[1.32rem] leading-[1.14] text-gold">{msg}</p>
+    <MyParishCard />
+
+    <section className="reveal mt-12">
+      <h2 className="text-[1.15rem]">Para empezar hoy</h2>
+      <p className="mt-2 text-[15.5px] leading-relaxed text-ink-2">{morning}</p>
+      <p className="scripture mt-4 text-[1.3rem] italic leading-snug text-ink">{msg}</p>
     </section>
 
     <PopeIntention />
 
-    <section className="mt-12">
-      <div className="mb-3 flex items-baseline justify-between"><h2 className="text-[1.6rem] leading-tight">Noticias de la Iglesia</h2><Link to="/descubrir/noticias" className="shrink-0 pl-2 text-sm text-muted">Ver todas</Link></div>
+    <section className="reveal mt-12">
+      <div className="mb-3 flex items-baseline justify-between"><h2 className="text-[1.15rem]">Noticias de la Iglesia</h2><Link to="/descubrir/noticias" className="shrink-0 pl-2 text-[13px] font-medium text-gold">Ver todas</Link></div>
       {news.stale && <p className="mb-2 text-sm text-warn">Sin conexión: pueden no ser las más recientes.</p>}
-      {news.data ? <div className="no-bar -mx-5 flex snap-x gap-2.5 overflow-x-auto px-5 pb-1">{news.data.items.slice(0, 6).map((n) => <div key={n.id} className="snap-card w-[78%] max-w-80 shrink-0 snap-start"><NewsCard item={n} /></div>)}</div>
-        : news.loading ? <p className="pulse-soft h-48 rounded-[22px] bg-surface" /> : <p className="text-[15px] text-muted">Las noticias no están disponibles ahora. {news.error}</p>}
+      {news.data ? <div className="no-bar -mx-5 flex snap-x gap-3 overflow-x-auto px-5 pb-1 md:-mx-8 md:px-8">{news.data.items.slice(0, 6).map((n) => <div key={n.id} className="snap-card w-[78%] max-w-80 shrink-0 snap-start"><NewsCard item={n} /></div>)}</div>
+        : news.loading ? <p className="pulse-soft h-56 rounded-2xl" /> : <p className="text-[15px] text-muted">Las noticias no están disponibles ahora. {news.error}</p>}
     </section>
 
     <CountdownStrip />
 
-    <section className="mt-12">
-      <div className="mb-1 flex items-baseline justify-between"><h2 className="text-[1.6rem] leading-tight">Lo que viene</h2><Link to="/descubrir/calendario" className="shrink-0 pl-2 text-sm text-muted">Calendario</Link></div>
-      <ul>{upcoming(d, 4).map((u) => <li key={u.date}><Link to={`/liturgia/${u.date}`} className="flex items-center gap-3 border-b border-line py-3 last:border-0"><LitDot color={u.color} /><span className="min-w-0 flex-1 font-serif text-[0.98rem] leading-[1.15]">{u.title}</span><time dateTime={u.date} className="shrink-0 text-sm text-muted">{shortDate(u.date)}</time></Link></li>)}</ul>
+    <section className="reveal mt-12">
+      <div className="mb-1 flex items-baseline justify-between"><h2 className="text-[1.15rem]">Lo que viene</h2><Link to="/descubrir/calendario" className="shrink-0 pl-2 text-[13px] font-medium text-gold">Calendario</Link></div>
+      <ul>{upcoming(d, 4).map((u) => <li key={u.date}><Link to={`/liturgia/${u.date}`} className="group flex items-center gap-3 border-b border-line py-3 last:border-0"><Ribbon color={u.color} /><span className="min-w-0 flex-1 text-[15px] font-medium leading-snug group-hover:underline">{u.title}</span><time dateTime={u.date} className="shrink-0 text-[13.5px] text-muted tabular">{shortDate(u.date)}</time></Link></li>)}</ul>
     </section>
 
-    <p className="mt-14 flex flex-col items-center gap-2 text-center font-serif text-xl text-muted"><Icon name="pray" size={22} />Alabado sea Jesucristo</p>
+    <p className="mt-16 flex items-center justify-center gap-2 text-center text-[13px] font-medium text-muted"><Icon name="pray" size={14} />Alabado sea Jesucristo</p>
 
     {stories && v && <DayStories date={d} verse={v} msg={msg} morning={morning} saint={saint} lit={lit} done={done} onClose={() => setStories(false)} />}
   </div>;
@@ -119,41 +123,44 @@ function DayStories({ date, verse: v, msg, morning, saint, lit, done, onClose }:
   const bio = saint ? findBio(saint) : undefined;
   const finalStreak = streakOf(new Set([date, ...getState().activity.map((a) => a.day)]));
   const slides: { label: string; body: React.ReactNode }[] = [
-    { label: 'Versículo de hoy', body: <><Big small={v.text.length > 170}>{v.text}</Big><p className="mt-4 font-serif text-2xl">{v.ref}</p><p className="mt-2 text-[17px] leading-snug opacity-65">{reflectionFor(v)}</p><div className="-ml-2 mt-2 flex"><FavoriteButton fav={{ kind: 'verse', id: v.id, title: v.ref, body: v.text }} /><ShareButton text={v.text} reference={v.ref} kicker="Versículo de hoy" /></div></> },
-    { label: 'Evangelio de hoy', body: gospel ? <><Big>{gospel.reference}</Big><p className="mt-3 text-[1.1rem] leading-[1.45] opacity-85">{gospel.text.replace(/\s+/g, ' ').slice(0, 380)}{gospel.text.length > 380 ? '…' : ''}</p><Go to="/liturgia" close={onClose}>Leer las lecturas</Go></> : <><Big>La Palabra de hoy te espera</Big><p className="mt-3 text-[17px] opacity-65">{__PREVIEW__ ? 'Las lecturas se activan en la app publicada.' : 'Ábrela con conexión para leerla.'}</p><Go to="/liturgia" close={onClose}>Abrir las lecturas</Go></> },
-    { label: 'Hoy recordamos a', body: <><Big>{saint ?? lit.title}</Big>{bio && <p className="mt-3 text-[1.1rem] leading-[1.4] opacity-80">{bio.bio}</p>}{saint && <Go to={`/descubrir/santos/${encodeURIComponent(saint)}`} close={onClose}>Conocer su vida</Go>}</> },
-    { label: 'Para hoy', body: <><Big>{msg}</Big><p className="mt-4 text-[1.1rem] leading-[1.4] opacity-80">{morning}</p></> },
-    { label: 'Hecho', body: <div className="pop"><Mark className="h-24 w-auto text-flame" /><p className="mt-2 font-serif text-[5.07rem] leading-[1]">{finalStreak}</p><p className="mt-3 font-serif text-2xl">{finalStreak === 1 ? 'día de racha' : 'días de racha'}</p><p className="mt-5 max-w-[28ch] text-[17px] leading-snug opacity-65">Antes de seguir con tu día, reza un momento. Basta con decir: aquí estoy.</p><Go to="/oracion/padre-nuestro" close={onClose}>Rezar un Padre nuestro</Go><button onClick={onClose} className="mt-1 block min-h-11 text-[15px] underline underline-offset-2 opacity-70">Terminar</button></div> },
+    { label: 'Versículo de hoy', body: <><Big small={v.text.length > 170}>{v.text}</Big><p className="mt-5 text-[15px] font-semibold">{v.ref}</p><p className="mt-2 text-[15.5px] leading-relaxed text-white/60">{reflectionFor(v)}</p><div className="-ml-2 mt-2 flex"><FavoriteButton fav={{ kind: 'verse', id: v.id, title: v.ref, body: v.text }} /><ShareButton text={v.text} reference={v.ref} kicker="Versículo de hoy" /></div></> },
+    { label: 'Evangelio de hoy', body: gospel ? <><Big>{gospel.reference}</Big><p className="scripture mt-4 text-[1.15rem] leading-[1.55] text-white/80">{gospel.text.replace(/\s+/g, ' ').slice(0, 380)}{gospel.text.length > 380 ? '…' : ''}</p><Go to="/liturgia" close={onClose}>Leer las lecturas</Go></> : <><Big>La Palabra de hoy te espera</Big><p className="mt-3 text-[15.5px] text-white/60">{__PREVIEW__ ? 'Las lecturas se activan en la app publicada.' : 'Ábrela con conexión para leerla.'}</p><Go to="/liturgia" close={onClose}>Abrir las lecturas</Go></> },
+    { label: 'Hoy recordamos a', body: <><Big>{saint ?? lit.title}</Big>{bio && <p className="mt-4 text-[15.5px] leading-relaxed text-white/70">{bio.bio}</p>}{saint && <Go to={`/descubrir/santos/${encodeURIComponent(saint)}`} close={onClose}>Conocer su vida</Go>}</> },
+    { label: 'Para hoy', body: <><Big>{msg}</Big><p className="mt-4 text-[15.5px] leading-relaxed text-white/70">{morning}</p></> },
+    { label: 'Hecho', body: <div className="pop"><Mark className="medal-in h-14 w-auto text-flame" /><p className="mt-5 text-[4.5rem] font-semibold leading-none tracking-[-.04em] tabular">{finalStreak}</p><p className="mt-1 text-[17px] font-medium text-white/80">{finalStreak === 1 ? 'día de racha' : 'días de racha'}</p><p className="mt-6 max-w-[30ch] text-[15.5px] leading-relaxed text-white/60">Antes de seguir con tu día, reza un momento. Basta con decir: aquí estoy.</p><Go to="/oracion/padre-nuestro" close={onClose}>Rezar un Padre nuestro</Go><button onClick={onClose} className="mt-2 block min-h-11 text-[14.5px] font-medium text-white/60 hover:text-white">Terminar</button></div> },
   ];
   const last = slides.length - 1;
   useEffect(() => { if (i === last && !done) logActivity({ kind: 'reading', ref: `dia-${date}`, label: 'Tu día' }); }, [i, last, done, date]);
   useEffect(() => { const f = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); if (e.key === 'ArrowRight') setI((x) => Math.min(last, x + 1)); if (e.key === 'ArrowLeft') setI((x) => Math.max(0, x - 1)); }; addEventListener('keydown', f); document.body.style.overflow = 'hidden'; return () => { removeEventListener('keydown', f); document.body.style.overflow = ''; }; }, [last, onClose]);
   const s = slides[i];
-  return <div role="dialog" aria-modal="true" aria-label="Tu día" className="c-ink fixed inset-0 z-50 flex flex-col overflow-hidden" onClick={(e) => { if ((e.target as HTMLElement).closest('a,button')) return; const r = e.currentTarget.getBoundingClientRect(); if (e.clientX - r.left < r.width * 0.3) setI(Math.max(0, i - 1)); else setI(Math.min(last, i + 1)); }}>
+  return <div role="dialog" aria-modal="true" aria-label="Tu día" className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-[#111015] text-white" onClick={(e) => { if ((e.target as HTMLElement).closest('a,button')) return; const r = e.currentTarget.getBoundingClientRect(); if (e.clientX - r.left < r.width * 0.3) setI(Math.max(0, i - 1)); else setI(Math.min(last, i + 1)); }}>
     <div className="safe-t relative mx-auto flex w-full max-w-xl items-center gap-1.5 pl-5 pr-2">
-      {slides.map((_, n) => <span key={n} className={`h-[3px] flex-1 rounded-full bg-current ${n <= i ? '' : 'opacity-25'}`} />)}
+      {slides.map((_, n) => <span key={n} className="h-[3px] flex-1 overflow-hidden rounded-full bg-white/20"><span className={`block h-full rounded-full bg-white transition-[width] duration-500 ${n <= i ? 'w-full' : 'w-0'}`} /></span>)}
       <button aria-label="Cerrar" className="grid size-11 place-items-center" onClick={onClose}><Icon name="close" /></button>
     </div>
-    <div key={i} className="slide relative mx-auto flex min-h-0 w-full max-w-xl flex-1 flex-col overflow-y-auto px-6 pb-3"><div className="my-auto py-4"><p className="mb-3 text-sm font-bold opacity-65">{s.label}</p>{s.body}</div></div>
-    {i < last && <p className="relative pb-5 text-center text-xs opacity-50">Toca para seguir</p>}
+    <div key={i} className="slide relative mx-auto flex min-h-0 w-full max-w-xl flex-1 flex-col overflow-y-auto px-6 pb-3"><div className="my-auto py-4"><p className="mb-4 text-[13px] font-medium text-white/50">{s.label}</p>{s.body}</div></div>
+    {i < last && <p className="relative pb-5 text-center text-xs text-white/40">Toca para seguir</p>}
   </div>;
 }
-const Big = ({ children, small }: { children: React.ReactNode; small?: boolean }) => <p className={`font-serif leading-[1.06] ${small ? 'text-[1.68rem]' : 'text-[2.4rem]'}`}>{children}</p>;
-const Go = ({ to, close, children }: { to: string; close: () => void; children: React.ReactNode }) => <button onClick={() => { close(); navigate(to); }} className="press mt-5 inline-flex min-h-12 w-fit items-center gap-2 rounded-full bg-pop px-6 font-extrabold text-white">{children}<Icon name="chevron" size={17} /></button>;
+const Big = ({ children, small }: { children: React.ReactNode; small?: boolean }) => <p className={`scripture leading-[1.22] ${small ? 'text-[1.6rem]' : 'text-[2.1rem]'}`}>{children}</p>;
+const Go = ({ to, close, children }: { to: string; close: () => void; children: React.ReactNode }) => <button onClick={() => { close(); navigate(to); }} className="press mt-6 inline-flex min-h-11 w-fit items-center gap-2 rounded-xl bg-white px-4 text-[15px] font-semibold text-[#111015] hover:bg-white/90">{children}<Icon name="chevron" size={16} /></button>;
 
 export function Onboarding() {
   const seen = useStore((s) => s.onboarded), [name, setName] = useState('');
   useEffect(() => { try { if (localStorage.getItem('zarzu.session')) setState({ onboarded: true }); } catch { /* sin almacenamiento */ } }, []);
   if (seen) return null;
   const done = () => { if (name.trim()) saveProfile({ name: name.trim().slice(0, 40) }); setState({ onboarded: true }); };
-  return <div className="soft-hero fixed inset-0 z-50 flex flex-col justify-end overflow-hidden md:items-center md:justify-center" role="dialog" aria-modal="true" aria-labelledby="ob">
-    <Mark className="flicker absolute -right-16 top-6 h-[26rem] w-auto text-flame" />
-    <form className="sheet safe-b relative w-full p-6 md:max-w-md" onSubmit={(e) => { e.preventDefault(); done(); }}>
-      <h2 id="ob" className="text-[5rem] leading-none">Zarzu</h2>
-      <p className="mt-1 text-[1.6rem] font-extrabold leading-[1.1] tracking-[-.02em]">Tu fe católica, un rato cada día.</p>
-      <p className="mt-2 text-[17px] leading-snug text-muted">El Evangelio, el rosario, los santos y misa cerca de ti.</p>
-      <Input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="¿Cómo te llamas? (opcional)" autoComplete="given-name" className="mt-7 !bg-paper" aria-label="Tu nombre" />
-      <button className="press mt-2.5 min-h-14 w-full rounded-full bg-pop text-[17px] font-extrabold text-white">Empezar</button>
+  return <div className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-paper md:items-center md:justify-center" role="dialog" aria-modal="true" aria-labelledby="ob">
+    <form className="safe-b mx-auto flex w-full max-w-md flex-1 flex-col px-6 pb-6 pt-[max(3.5rem,env(safe-area-inset-top))] md:flex-none md:pt-6" onSubmit={(e) => { e.preventDefault(); done(); }}>
+      <Mark className="rise h-10 w-auto self-start text-flame" />
+      <h2 id="ob" className="rise mt-8 text-[2.6rem] leading-[1.05] tracking-[-.035em]" style={{ animationDelay: '60ms' }}>Tu fe católica,<br />un rato cada día.</h2>
+      <ul className="mt-8 space-y-4 text-[15px]">{[['book', 'El Evangelio y las lecturas de cada día'], ['rosary', 'El rosario y las oraciones, paso a paso'], ['target', 'Misas y adoración cerca de ti, con horarios']].map(([icon, text], k) => <li key={icon} className="rise flex items-center gap-3 text-ink-2" style={{ animationDelay: `${140 + k * 60}ms` }}><span className="niche !size-9"><Icon name={icon} size={18} /></span>{text}</li>)}</ul>
+      <div className="mt-auto pt-10 md:mt-10">
+        <label htmlFor="ob-name" className="text-[13px] font-medium text-muted">¿Cómo te llamas? (opcional)</label>
+        <Input id="ob-name" autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="Tu nombre" autoComplete="given-name" className="mt-1.5" aria-label="Tu nombre" />
+        <button className="press mt-3 min-h-[3.25rem] w-full rounded-xl bg-pop text-[15.5px] font-semibold text-white transition-[filter] hover:brightness-110">Empezar</button>
+        <p className="mt-3 text-center text-[12.5px] text-muted">Sin cuenta y sin anuncios. Tus datos se quedan en este dispositivo.</p>
+      </div>
     </form>
   </div>;
 }

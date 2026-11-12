@@ -129,7 +129,7 @@ export function RadarScreen() {
     </div>
     {mode !== 'perpetua' && <div className="no-bar -mx-5 mb-2 flex items-center gap-2 overflow-x-auto px-5">
       <Chip active={!day} onClick={() => setDay('')}>Hoy y mañana</Chip>
-      <label className={`press relative flex min-h-10 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-4 text-[15px] font-bold transition-colors duration-300 ${day ? 'bg-pop text-white' : 'bg-surface text-ink'}`}>
+      <label className={`press relative flex min-h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-3.5 text-[14px] font-medium transition-colors duration-200 focus-within:ring-4 focus-within:ring-pop-soft ${day ? 'border-ink bg-ink text-paper' : 'border-line bg-paper text-ink-2 hover:border-muted/50'}`}>
         <Icon name="calendar" size={16} />{day ? longDate(day).replace(/^./, (c) => c.toUpperCase()) : 'Otro día'}
         <input type="date" aria-label="Elegir día" min={today()} max={addDays(today(), 60)} value={day} onChange={(e) => setDay(e.target.value)} className="absolute inset-0 cursor-pointer opacity-0" />
       </label>
@@ -137,61 +137,61 @@ export function RadarScreen() {
     <RadarView origin={origin} items={items} radius={radius} now={now} selected={sel} onSelect={(id) => setSel(id === sel ? null : id)} scanning={!!busy} mode={mode} />
     {!origin && !busy && <div className="mt-4 text-center">
       <Button onClick={locate} className="w-full"><Icon name="target" size={18} />Activar el radar</Button>
-      <p className="mt-2 text-sm text-muted">Solo usamos tu ubicación al pulsar el botón y no la guardamos.</p>
+      <p className="mt-2 text-[13px] text-muted">Solo usamos tu ubicación al pulsar el botón y no la guardamos.</p>
     </div>}
     <form className="mt-3 flex gap-2" onSubmit={(e) => { e.preventDefault(); void search(); }}>
       <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="O busca una localidad" aria-label="Localidad o código postal" />
       <Button kind="ghost" aria-label="Buscar"><Icon name="search" size={18} /></Button>
       {origin && <Button type="button" kind="ghost" aria-label="Usar mi ubicación" onClick={locate}><Icon name="target" size={18} /></Button>}
     </form>
-    {options.length > 0 && <ul className="mt-2 overflow-hidden rounded-2xl bg-surface">{options.map((o) => <li key={`${o.lat},${o.lon}`}><button className="w-full border-b border-line p-3 text-left text-sm last:border-0" onClick={() => { setOrigin(o); setOptions([]); }}>{o.name}</button></li>)}</ul>}
+    {options.length > 0 && <ul className="list sheet mt-2">{options.map((o) => <li key={`${o.lat},${o.lon}`}><button className="hoverable w-full px-4 py-3 text-left text-[14.5px]" onClick={() => { setOrigin(o); setOptions([]); }}>{o.name}</button></li>)}</ul>}
     {err && <div className="mt-3"><Notice tone="warn">{err}</Notice></div>}
     {busy && <Spinner label={busy} />}
 
     {origin && list && !busy && <>
       <div className="no-bar -mx-5 mt-3 flex gap-2 overflow-x-auto px-5">{RADII[mode].map((r) => <Chip key={r} active={radius === r} onClick={() => setRadius(r)}>{r} km</Chip>)}</div>
-      <p className="mt-3 text-[15px] text-muted">{items.length} {items.length === 1 ? 'templo' : 'templos'} a menos de {radius} km{origin.name !== 'Tu ubicación' ? ` de ${origin.name.split(',')[0]}` : ''}. {mode !== 'perpetua' && soonCount ? <b className="text-ink">{what(soonCount)} ahora o en las próximas 2 horas.</b> : ''}</p>
+      <p className="mt-4 text-[14.5px] leading-snug text-muted">{items.length} {items.length === 1 ? 'templo' : 'templos'} a menos de {radius} km{origin.name !== 'Tu ubicación' ? ` de ${origin.name.split(',')[0]}` : ''}. {mode !== 'perpetua' && soonCount ? <b className="font-semibold text-ink">{what(soonCount)} ahora o en las próximas 2 horas.</b> : ''}</p>
 
       {selected && (selected.m ? <MisasCard it={selected} now={now} mode={mode} onClose={() => setSel(null)} /> : selected.p && <PlaceCard place={selected.p} distance={selected.d} onClose={() => setSel(null)} />)}
       {misas === null && !__PREVIEW__ && mode === 'misa' && <div className="mt-3"><Notice tone="warn">Ahora mismo no se pueden consultar los horarios de misas.org. Mostramos los que tenemos de otras fuentes.</Notice></div>}
 
-      <h2 className="mt-7 text-[1.6rem] leading-tight">{heading}</h2>
-      {upcoming.length ? <ul className="mt-2 space-y-2">{(showAll ? upcoming : upcoming.slice(0, 8)).map(({ it, s }) => {
+      <h2 className="mt-8 text-[1.3rem] font-semibold leading-tight tracking-[-.015em]">{heading}</h2>
+      {upcoming.length ? <ul className="mt-3 overflow-hidden rounded-2xl border border-line">{(showAll ? upcoming : upcoming.slice(0, 8)).map(({ it, s }) => {
         const open = isOpen(s, now), soon = minsTo(s, now) <= SOON;
         const big = s.perpetual ? '24 h' : s.end ? `${hhmm(s.minutes)}` : hhmm(s.minutes);
         const until = otherDay ? '' : untilLabel(s.at, now);
         const small = s.perpetual ? 'Día y noche' : open ? `Ahora, hasta las ${hhmm(s.end!.getHours() * 60 + s.end!.getMinutes())}` : s.end ? `${until ? `${until}, h` : 'H'}asta las ${hhmm(s.end.getHours() * 60 + s.end.getMinutes())}` : until;
-        return <li key={`${it.id}-${s.at.getTime()}`}><button onClick={() => setSel(it.id)} className={`press flex w-full items-center gap-3 rounded-[22px] p-3.5 text-left ${soon ? 'c-ink' : 'bg-surface'}`}>
-          <span className="w-[5.6rem] shrink-0"><span className="block font-serif text-[1.7rem] leading-none">{big}</span><span className="mt-1 block text-xs font-bold leading-tight">{small}</span></span>
-          <span className="min-w-0 flex-1"><span className="block font-serif text-[1.05rem] leading-[1.15]">{it.name}</span><span className="mt-0.5 block text-sm text-muted">{fmtKm(it.d)}. {ador ? `${s.label}${s.note ? ` (${s.note})` : ''}. misas.org` : sourceLabel(it)}</span></span>
-          <Icon name="chevron" size={18} className="text-muted" /></button></li>;
+        return <li key={`${it.id}-${s.at.getTime()}`} className="border-b border-line last:border-0"><button onClick={() => setSel(it.id)} aria-pressed={sel === it.id} className={`press flex w-full items-center gap-3.5 px-4 py-3.5 text-left transition-colors ${sel === it.id ? 'bg-surface' : 'hoverable'}`}>
+          <span className="w-[5.4rem] shrink-0"><span className={`tabular block text-[1.6rem] font-semibold leading-none tracking-[-.03em] ${soon ? 'text-gold' : ''}`}>{big}</span><span className={`mt-1 block text-[12px] font-medium leading-tight ${soon ? 'text-gold' : 'text-muted'}`}>{small}</span></span>
+          <span className="min-w-0 flex-1"><span className="block text-[15px] font-medium leading-snug">{it.name}</span><span className="mt-0.5 block text-[13px] text-muted">{fmtKm(it.d)}. {ador ? `${s.label}${s.note ? ` (${s.note})` : ''}. misas.org` : sourceLabel(it)}</span></span>
+          <Icon name="chevron" size={16} className="text-muted/70" /></button></li>;
       })}</ul> : <p className="mt-2 text-[15px] leading-snug text-muted">{mode === 'misa' ? 'No conocemos el horario de ningún templo de esta zona. Abre uno de la lista para llamar, ver su web o enviarnos su horario.' : mode === 'adoracion' ? 'misas.org no tiene adoración del Santísimo hoy ni mañana en esta zona. Prueba con más distancia.' : 'misas.org no tiene ninguna capilla de adoración perpetua en esta zona. Prueba con 25 km.'}</p>}
-      {upcoming.length > 8 && !showAll && <button className="mt-2 min-h-11 text-[15px] font-bold text-gold" onClick={() => setShowAll(true)}>Ver todo ({upcoming.length})</button>}
+      {upcoming.length > 8 && !showAll && <button className="mt-2 min-h-11 text-[14.5px] font-medium text-gold" onClick={() => setShowAll(true)}>Ver todo ({upcoming.length})</button>}
 
-      {withText.length > 0 && <><h2 className="mt-7 text-[1.3rem] leading-tight">Con horario por revisar</h2><p className="text-sm text-muted">Tienen un horario escrito que no sabemos leer con seguridad. Ábrelos para verlo.</p>
+      {withText.length > 0 && <><h2 className="mt-10 text-[1.05rem] font-semibold leading-tight">Con horario por revisar</h2><p className="mt-1 text-[13.5px] text-muted">Tienen un horario escrito que no sabemos leer con seguridad. Ábrelos para verlo.</p>
         <ul className="mt-1">{withText.map((x) => <PlaceRow key={x.id} it={x} onClick={() => setSel(x.id)} />)}</ul></>}
-      {unknown.length > 0 && <><h2 className="mt-7 text-[1.3rem] leading-tight">Sin horario todavía</h2><p className="text-sm text-muted">Ábrelos para llamar, ver su web o enviarnos el horario si lo conoces. También puedes buscarlos en <a href={MISAS_ORG} target="_blank" rel="noopener" className="font-bold text-gold underline">misas.org</a>.</p>
+      {unknown.length > 0 && <><h2 className="mt-10 text-[1.05rem] font-semibold leading-tight">Sin horario todavía</h2><p className="mt-1 text-[13.5px] text-muted">Ábrelos para llamar, ver su web o enviarnos el horario si lo conoces. También puedes buscarlos en <a href={MISAS_ORG} target="_blank" rel="noopener" className="font-medium text-gold underline">misas.org</a>.</p>
         <ul className="mt-1">{unknown.map((x) => <PlaceRow key={x.id} it={x} onClick={() => setSel(x.id)} />)}</ul></>}
-      {noMassToday.length > 0 && <><h2 className="mt-7 text-[1.3rem] leading-tight">{day ? 'Sin misa ese día' : 'Sin misa hoy ni mañana'}</h2><p className="text-sm text-muted">{day ? 'Según misas.org, estos templos no tienen misa ese día.' : 'Según misas.org, estos templos no tienen misa en los próximos dos días.'}</p>
+      {noMassToday.length > 0 && <><h2 className="mt-10 text-[1.05rem] font-semibold leading-tight">{day ? 'Sin misa ese día' : 'Sin misa hoy ni mañana'}</h2><p className="text-sm text-muted">{day ? 'Según misas.org, estos templos no tienen misa ese día.' : 'Según misas.org, estos templos no tienen misa en los próximos dos días.'}</p>
         <ul className="mt-1">{noMassToday.map((x) => <PlaceRow key={x.id} it={x} onClick={() => setSel(x.id)} />)}</ul></>}
-      <p className="mt-6 text-xs leading-relaxed text-muted">Horarios de <a href="https://misas.org" target="_blank" rel="noopener" className="underline">misas.org</a>, de la Asociación Eucharistia.{mode === 'misa' ? ' Donde no los tiene, salen de OpenStreetMap (sin confirmar) o los ha comprobado nuestro equipo (confirmados).' : ' Algunos ratos de adoración cambian en verano o en invierno: lo indica entre paréntesis.'} No mostramos horarios inventados. Si es importante, confírmalo con la parroquia. <Link to="/descubrir/templos" className="underline">Ver los templos en el mapa</Link></p>
+      <p className="mt-10 border-t border-line pt-4 text-xs leading-relaxed text-muted">Horarios de <a href="https://misas.org" target="_blank" rel="noopener" className="underline">misas.org</a>, de la Asociación Eucharistia.{mode === 'misa' ? ' Donde no los tiene, salen de OpenStreetMap (sin confirmar) o los ha comprobado nuestro equipo (confirmados).' : ' Algunos ratos de adoración cambian en verano o en invierno: lo indica entre paréntesis.'} No mostramos horarios inventados. Si es importante, confírmalo con la parroquia. <Link to="/descubrir/templos" className="underline">Ver los templos en el mapa</Link></p>
     </>}
   </Page>;
 }
 
-const PlaceRow = ({ it, onClick }: { it: Item; onClick: () => void }) => <li><button onClick={onClick} className="flex w-full items-center gap-3 border-b border-line py-3 text-left">
-  <span className="min-w-0 flex-1"><span className="block font-serif text-[1.02rem] leading-[1.15]">{it.name}</span><span className="text-sm text-muted">{fmtKm(it.d)}{it.p?.phone ? '. Tiene teléfono' : ''}{it.p?.website ? '. Tiene web' : ''}</span></span>
-  <Icon name="chevron" size={18} className="text-muted" /></button></li>;
+const PlaceRow = ({ it, onClick }: { it: Item; onClick: () => void }) => <li><button onClick={onClick} className="hoverable -mx-2 flex w-[calc(100%+1rem)] items-center gap-3 rounded-lg border-b border-line px-2 py-3 text-left">
+  <span className="min-w-0 flex-1"><span className="block text-[15px] font-medium leading-snug">{it.name}</span><span className="text-[13px] text-muted">{fmtKm(it.d)}{it.p?.phone ? '. Tiene teléfono' : ''}{it.p?.website ? '. Tiene web' : ''}</span></span>
+  <Icon name="chevron" size={16} className="text-muted/70" /></button></li>;
 
 function RadarView({ origin, items, radius, now, selected, onSelect, scanning, mode }: { origin: Geo | null; items: Item[]; radius: number; now: Date; selected: string | null; onSelect: (id: string) => void; scanning: boolean; mode: Mode }) {
   const R = 150, C = 160;
   return <div className="relative mx-auto mt-1 aspect-square w-full max-w-[22rem]">
     <svg viewBox="0 0 320 320" className="absolute inset-0 size-full" role="img" aria-label={origin ? `Radar con ${items.length} templos a menos de ${radius} km` : 'Radar apagado'}>
-      <defs><radialGradient id="rg"><stop offset="0" stopColor="var(--radar-glow)" stopOpacity=".35" /><stop offset="1" stopColor="var(--surface)" stopOpacity="1" /></radialGradient></defs>
-      <circle cx={C} cy={C} r={R} fill="url(#rg)" />
-      {[1, 2, 3].map((k) => <circle key={k} cx={C} cy={C} r={(R * k) / 3} fill="none" stroke="var(--sand)" strokeWidth="1.5" />)}
-      <path d={`M${C} ${C - R}V${C + R}M${C - R} ${C}H${C + R}`} stroke="var(--sand)" strokeWidth="1" />
-      <text x={C} y={C - R + 14} textAnchor="middle" fontSize="11" fontWeight="700" fill="var(--muted)">N</text>
+      <defs><radialGradient id="rg"><stop offset="0" stopColor="var(--radar-glow)" stopOpacity=".07" /><stop offset=".85" stopColor="var(--paper)" stopOpacity="1" /></radialGradient></defs>
+      <circle cx={C} cy={C} r={R} fill="url(#rg)" stroke="var(--line)" />
+      {[1, 2, 3].map((k) => <circle key={k} cx={C} cy={C} r={(R * k) / 3} fill="none" stroke="var(--line)" strokeWidth="1" />)}
+      <path d={`M${C} ${C - R}V${C + R}M${C - R} ${C}H${C + R}`} stroke="var(--line)" strokeWidth="1" strokeDasharray="2 4" />
+      <text x={C} y={C - R + 14} textAnchor="middle" fontSize="11" fontWeight="600" fill="var(--muted)">N</text>
       {origin && [1, 2, 3].map((k) => <text key={k} x={C + 4} y={C - (R * k) / 3 - 3} fontSize="9.5" fill="var(--muted)">{fmtKm((radius * k) / 3)}</text>)}
     </svg>
     {(scanning || origin) && <div aria-hidden="true" className="radar-sweep absolute inset-[3.1%] rounded-full" />}
@@ -224,23 +224,23 @@ function MisasCard({ it, now, mode, onClose }: { it: Item; now: Date; mode: Mode
   const dayName = (day: string) => { const t = new Date(now.getTime() + 86_400_000); return dayDate(day).toDateString() === now.toDateString() ? 'Hoy' : dayDate(day).toDateString() === t.toDateString() ? 'Mañana' : longDate(day).replace(/^./, (c) => c.toUpperCase()); };
   const past = (day: string, t: string) => dayDate(day, t).getTime() < now.getTime() - 5 * 60000;
   const masses = Object.entries(m.masses), adorations = Object.entries(m.adorations);
-  return <article className="sheet mt-4 rounded-[26px] bg-surface p-5" aria-label={m.name}>
+  return <article className="sheet mt-4 rounded-2xl border border-line bg-paper p-5 shadow-[var(--shadow-float)]" aria-label={m.name}>
     <div className="flex items-start justify-between gap-3">
-      <div><h3 className="text-[1.45rem] leading-[1.1]">{m.name}</h3><p className="mt-1 text-sm text-muted">{[m.address, m.town].filter(Boolean).join(', ')}. A {fmtKm(it.d)}.</p></div>
-      <button onClick={onClose} aria-label="Cerrar" className="press -mr-2 -mt-1 grid size-10 shrink-0 place-items-center rounded-full"><Icon name="close" size={20} /></button>
+      <div><h3 className="text-[1.25rem] font-semibold leading-tight tracking-[-.015em]">{m.name}</h3><p className="mt-1 text-[13.5px] text-muted">{[m.address, m.town].filter(Boolean).join(', ')}. A {fmtKm(it.d)}.</p></div>
+      <button onClick={onClose} aria-label="Cerrar" className="press hoverable -mr-2 -mt-1 grid size-10 shrink-0 place-items-center rounded-full"><Icon name="close" size={20} /></button>
     </div>
-    {mode === 'misa' ? (masses.length ? masses.map(([day, times]) => <div key={day} className="mt-4"><p className="text-sm font-bold">{dayName(day)}</p>
-      <div className="mt-1.5 flex flex-wrap gap-1.5">{times.map((t) => <span key={t} className={`rounded-full px-3 py-1.5 text-[15px] font-bold ${past(day, t) ? 'bg-paper text-muted line-through' : 'bg-pop text-white'}`}>{t}</span>)}</div></div>)
+    {mode === 'misa' ? (masses.length ? masses.map(([day, times]) => <div key={day} className="mt-4"><p className="text-[13px] font-medium text-muted">{dayName(day)}</p>
+      <div className="mt-1.5 flex flex-wrap gap-1.5">{times.map((t) => <span key={t} className={`tabular rounded-lg px-2.5 py-1 text-[15px] font-semibold ${past(day, t) ? 'bg-surface text-muted line-through' : 'bg-pop-soft text-gold'}`}>{t}</span>)}</div></div>)
       : <p className="mt-4 text-[15px]">Según misas.org no hay misa en esos días.</p>)
-      : adorations.some(([, l]) => l.some((a) => a.type === 'perpetua')) ? <p className="mt-4 rounded-2xl bg-paper p-3 text-[15px]"><b>Adoración perpetua.</b> El Santísimo está expuesto día y noche. Conviene confirmar el horario de acceso a la capilla.</p>
-      : adorations.map(([day, list]) => <div key={day} className="mt-4"><p className="text-sm font-bold">{dayName(day)}</p>
-        <ul className="mt-1.5 space-y-1.5">{list.map((a) => <li key={a.begin + a.end + a.note} className={`rounded-2xl px-3 py-2 text-[15px] ${past(day, a.end === '00:00' ? '23:59' : a.end) ? 'bg-paper text-muted line-through' : 'bg-paper'}`}><b>{a.begin}–{a.end}</b> {ADOR_LABEL[a.type]}{a.note ? `, ${a.note}` : ''}</li>)}</ul></div>)}
+      : adorations.some(([, l]) => l.some((a) => a.type === 'perpetua')) ? <p className="mt-4 rounded-xl bg-surface p-3 text-[14.5px]"><b className="font-semibold">Adoración perpetua.</b> El Santísimo está expuesto día y noche. Conviene confirmar el horario de acceso a la capilla.</p>
+      : adorations.map(([day, list]) => <div key={day} className="mt-4"><p className="text-[13px] font-medium text-muted">{dayName(day)}</p>
+        <ul className="mt-1.5 space-y-1.5">{list.map((a) => <li key={a.begin + a.end + a.note} className={`rounded-xl px-3 py-2 text-[14.5px] ${past(day, a.end === '00:00' ? '23:59' : a.end) ? 'bg-surface text-muted line-through' : 'bg-pop-soft'}`}><b className="tabular font-semibold">{a.begin}–{a.end}</b> {ADOR_LABEL[a.type]}{a.note ? `, ${a.note}` : ''}</li>)}</ul></div>)}
     {mode === 'misa' && <ParishButton church={m} />}
     <div className="mt-5 flex flex-wrap gap-2">
       <a href={`https://www.google.com/maps/dir/?api=1&destination=${m.lat},${m.lon}`} target="_blank" rel="noopener"><Button><Icon name="route" size={18} />Cómo llegar</Button></a>
       {p?.phone && <a href={`tel:${p.phone.replace(/\s/g, '')}`}><Button kind="ghost"><Icon name="phone" size={18} />Llamar</Button></a>}
       <a href={m.url} target="_blank" rel="noopener"><Button kind="ghost"><Icon name="globe" size={18} />Ver en misas.org</Button></a>
     </div>
-    <p className="mt-4 text-xs text-muted">Horario de misas.org. Puede cambiar en fiestas o en verano: si es importante, confírmalo con la parroquia.</p>
+    <p className="mt-4 border-t border-line pt-3 text-xs text-muted">Horario de misas.org. Puede cambiar en fiestas o en verano: si es importante, confírmalo con la parroquia.</p>
   </article>;
 }

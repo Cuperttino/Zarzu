@@ -56,7 +56,7 @@ export function applyTheme() {
   const dark = t === 'dark' || (t === 'auto' && (host ? host === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches));
   document.documentElement.classList.toggle('dark', dark);
   document.documentElement.style.setProperty('--reading-scale', String(state.settings.readingScale));
-  document.querySelector('meta[name=theme-color]')?.setAttribute('content', dark ? '#120828' : '#fbf9ff');
+  document.querySelector('meta[name=theme-color]')?.setAttribute('content', dark ? '#0c0c0f' : '#ffffff');
 }
 
 // ---------- cola de operaciones pendientes con Supabase ----------

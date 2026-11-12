@@ -51,7 +51,7 @@ const html = `<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>${preview ? 'Zarzu app católica' : title}</title>
 <meta name="description" content="${desc}">
-<meta name="theme-color" content="#fbf9ff">
+<meta name="theme-color" content="#ffffff">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Zarzu">
@@ -72,7 +72,7 @@ ${preview ? `<script type="module">${jsText.replaceAll('</script', '<\\/script')
 fs.writeFileSync(`${out}/index.html`, html);
 
 if (!preview) {
-  const shell = ['/', `/assets/${jsName}`, `/assets/${cssName}`, '/fonts/Bricolage.woff', '/fonts/CrimsonPro-Regular.woff', '/data/books.json', '/data/verses.json', '/icons/icon.svg', '/manifest.webmanifest'];
+  const shell = ['/', `/assets/${jsName}`, `/assets/${cssName}`, '/fonts/Geist.woff', '/fonts/Newsreader.woff', '/fonts/Newsreader-Italic.woff', '/data/books.json', '/data/verses.json', '/icons/icon.svg', '/manifest.webmanifest'];
   fs.writeFileSync(`${out}/sw.js`, fs.readFileSync('src/sw.js', 'utf8').replace('__VERSION__', hash(jsText + css)).replace('__SHELL__', JSON.stringify(shell)));
   const routes = ['', 'biblia', 'oracion', 'oracion/rosario', 'descubrir', 'descubrir/noticias', 'descubrir/templos', 'descubrir/misas', 'descubrir/calendario', 'descubrir/santos', 'liturgia', 'privacidad'];
   if (SITE) fs.writeFileSync(`${out}/sitemap.xml`, `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${routes.map((r) => `<url><loc>${SITE}/${r}</loc></url>`).join('')}</urlset>`);
@@ -81,7 +81,7 @@ if (!preview) {
 if (preview) {
   // Vista previa publicable en claude.ai: un solo archivo con fuentes incrustadas y sin envoltura HTML.
   const font = (f) => `data:font/woff;base64,${fs.readFileSync(`public/fonts/${f}`).toString('base64')}`;
-  const inlineCss = ['Bricolage', 'CrimsonPro-Regular'].reduce((c, n) => c.replaceAll(`fonts/${n}.woff`, font(`${n}.woff`)), css);
+  const inlineCss = ['Geist', 'Newsreader', 'Newsreader-Italic'].reduce((c, n) => c.replaceAll(`fonts/${n}.woff`, font(`${n}.woff`)), css);
   const body = `<title>Zarzu app católica</title>\n<meta name="description" content="${desc}">\n<style>${inlineCss}</style>\n<script>(function(){var r=document.documentElement,h=r.dataset.theme,d=false;try{var t=(JSON.parse(localStorage.getItem('zarzu.v2')||'{}').settings||{}).theme;if(t==='dark')d=true;if(t==='auto')d=h?h==='dark':matchMedia('(prefers-color-scheme: dark)').matches}catch(e){}if(d)document.documentElement.classList.add('dark')})()</script>\n<div id="root"></div>\n<script type="module">${jsText.replaceAll('</script', '<\\/script')}</script>\n`;
   fs.writeFileSync(`${out}/zarzu.html`, body);
 }

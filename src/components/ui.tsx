@@ -28,71 +28,76 @@ const P: Record<string, ReactNode> = {
   plus: <path d="M12 5v14M5 12h14" />, flame: <path d="M12.300 2.500c.700 3.100-1.400 4.300-2.700 6.100-.600-.700-.900-1.500-.900-2.300C6.800 8 5.600 10.200 5.600 12.800c0 4 2.900 6.700 6.400 6.700s6.400-2.700 6.400-6.700c0-4.300-3.400-7.100-6.100-10.300Z" />, play: <path d="M8 5.500v13l10.500-6.500z" />, check: <path d="m5 12.500 4.500 4.500L19 7.500" />, shield: <path d="M12 3.500 5 6v6c0 4.500 3 7.500 7 9 4-1.500 7-4.500 7-9V6z" />, down: <path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14" />,
 };
 export function Icon({ name, size = 22, fill = false, className = '' }: { name: string; size?: number; fill?: boolean; className?: string }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill={fill ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={fill ? 0 : 2.1} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={`shrink-0 ${className}`}>{P[name]}</svg>;
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill={fill ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={fill ? 0 : 1.75} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={`shrink-0 ${className}`}>{P[name]}</svg>;
 }
 
 export function Link({ to, children, className = '', label }: { to: string; children: ReactNode; className?: string; label?: string }) {
   return <a href={to} aria-label={label} className={className} onClick={(e) => { if (e.metaKey || e.ctrlKey) return; e.preventDefault(); navigate(to); }}>{children}</a>;
 }
-/** Bloque de acceso: gris suave, icono arriba y título abajo. */
+/** Acceso destacado: tarjeta blanca con borde fino, icono y título. Para listas largas se usa Row dentro de .list. */
 export function Tile({ to, icon, title, sub, className = '' }: { to: string; icon: string; title: ReactNode; sub?: ReactNode; className?: string }) {
-  return <Link to={to} className={`press tile reveal flex min-h-36 flex-col justify-between rounded-[22px] bg-surface p-4 ${className}`}>
-    <span className="niche"><Icon name={icon} size={23} /></span>
-    <span className="mt-5 block"><span className="block font-serif text-[1.2rem] leading-[1.06]">{title}</span>{sub && <span className="mt-1 block text-sm leading-tight opacity-60">{sub}</span>}</span>
+  return <Link to={to} className={`press tile reveal flex min-h-[7.5rem] flex-col justify-between rounded-2xl border border-line bg-paper p-4 ${className}`}>
+    <span className="niche"><Icon name={icon} size={20} /></span>
+    <span className="mt-4 block"><span className="block text-[15.5px] font-semibold leading-snug tracking-[-.01em]">{title}</span>{sub && <span className="mt-0.5 block text-[13.5px] leading-snug text-muted">{sub}</span>}</span>
   </Link>;
 }
 export function Page({ title, back, right, children, subtitle }: { title: string; back?: string; right?: ReactNode; subtitle?: string; children: ReactNode }) {
   return <div className="mx-auto w-full max-w-2xl">
-    <header className="page-bar safe-t sticky top-0 z-20 bg-paper/85 px-3 backdrop-blur-xl">
+    <header className="page-bar safe-t sticky top-0 z-20 bg-paper/80 px-3 backdrop-blur-xl backdrop-saturate-150">
       <div className="relative flex min-h-11 items-center justify-between gap-1">
-        <span aria-hidden="true" className="page-mini pointer-events-none absolute inset-x-14 top-1/2 truncate text-center font-serif text-[1.05rem]" data-title={title} />
-        {back ? <button aria-label="Volver" className="press -ml-1 grid size-11 place-items-center rounded-full" onClick={() => goBack(back)}><Icon name="back" /></button> : <Wordmark className="px-2 md:invisible" />}
+        <span aria-hidden="true" className="page-mini pointer-events-none absolute inset-x-14 top-1/2 truncate text-center text-[15px] font-semibold" data-title={title} />
+        {back ? <button aria-label="Volver" className="press hoverable -ml-1 grid size-10 place-items-center rounded-full" onClick={() => goBack(back)}><Icon name="back" /></button> : <Wordmark className="px-2 md:invisible" />}
         {right && <div className="flex min-w-0 items-center">{right}</div>}
       </div>
     </header>
-    <main className="px-5 pb-32 md:pb-12">
-      <h1 className="mt-3 text-[2.4rem] leading-[1]">{title}</h1>
-      {subtitle && <p className="mt-1.5 text-[15px] text-muted">{subtitle}</p>}
-      <div className="mt-5">{children}</div>
+    <main className="px-5 pb-32 md:px-8 md:pb-16">
+      <h1 className="rise mt-2 text-[2rem] leading-[1.1] md:mt-6 md:text-[2.4rem]">{title}</h1>
+      {subtitle && <p className="rise mt-1.5 text-[15px] text-muted">{subtitle}</p>}
+      <div className="mt-6">{children}</div>
     </main>
   </div>;
 }
 /** Logo de Zarzu: la llama de la zarza ardiente. */
 export const Mark = ({ className = '' }: { className?: string }) => <svg viewBox="100 66 312 374" fill="currentColor" aria-hidden="true" className={className}><path d="M262 76c14 66 -30 92 -58 130 -12 -14 -18 -32 -18 -50 -40 36 -66 84 -66 138 0 86 62 142 136 142s136-58 136-142c0-92-72-150-130-218Z" /></svg>;
-export const Wordmark = ({ className = '' }: { className?: string }) => <Link to="/" label="Zarzu, inicio" className={`flex items-center gap-1.5 font-serif text-[1.45rem] leading-none ${className}`}><Mark className="h-6 w-auto text-flame" />Zarzu</Link>;
-export const LIT_SWATCH: Record<string, string> = { blanco: '#d4d4d8', rojo: '#ef4444', verde: '#22c55e', morado: '#8b5cf6', rosa: '#f472b6' };
-export const LitDot = ({ color, className = 'size-3' }: { color: string; className?: string }) => <span className={`inline-block shrink-0 rounded-full ${className}`} style={{ background: LIT_SWATCH[color] }} />;
+export const Wordmark = ({ className = '' }: { className?: string }) => <Link to="/" label="Zarzu, inicio" className={`flex items-center gap-2 text-[1.2rem] font-semibold leading-none tracking-[-.03em] ${className}`}><Mark className="h-[1.3rem] w-auto text-flame" />Zarzu</Link>;
+export const LIT_SWATCH: Record<string, string> = { blanco: '#d6d3cb', rojo: '#d92d20', verde: '#1f8a4c', morado: '#6c3fc4', rosa: '#e1719c' };
+export const LitDot = ({ color, className = 'size-2.5' }: { color: string; className?: string }) => <span className={`inline-block shrink-0 rounded-full ${className}`} style={{ background: LIT_SWATCH[color] }} />;
+/** Cinta de misal con el color litúrgico. */
+export const Ribbon = ({ color, className = '' }: { color: string; className?: string }) => <span aria-hidden="true" className={`ribbon shrink-0 ${className}`} style={{ background: LIT_SWATCH[color] }} />;
 export const Section = ({ title, action, children, className = '' }: { title?: string; action?: ReactNode; children: ReactNode; className?: string }) => (
-  <section className={`reveal mt-10 ${className}`}>{(title || action) && <div className="mb-3 flex items-baseline justify-between gap-3">{title && <h2 className="text-[1.52rem] leading-tight">{title}</h2>}{action}</div>}{children}</section>
+  <section className={`reveal mt-10 ${className}`}>{(title || action) && <div className="mb-3 flex items-baseline justify-between gap-3">{title && <h2 className="text-[1.15rem] leading-tight">{title}</h2>}{action}</div>}{children}</section>
 );
-export const Spinner = ({ label = 'Cargando…' }: { label?: string }) => <p role="status" className="pulse-soft py-8 text-center text-sm text-muted">{label}</p>;
+export const Spinner = ({ label = 'Cargando…' }: { label?: string }) => <p role="status" className="flex items-center justify-center gap-2.5 py-8 text-sm text-muted"><span className="spinner" aria-hidden="true" />{label}</p>;
 export const Notice = ({ tone = 'info', children, action }: { tone?: 'info' | 'warn' | 'error'; children: ReactNode; action?: ReactNode }) => (
-  <div role={tone === 'error' ? 'alert' : undefined} className={`rounded-2xl px-4 py-3 text-[15px] leading-snug ${tone === 'info' ? 'bg-sand text-ink' : tone === 'warn' ? 'bg-warn/15 text-ink' : 'bg-danger/15 text-ink'}`}>
+  <div role={tone === 'error' ? 'alert' : undefined} className={`rounded-xl px-4 py-3 text-[14.5px] leading-snug ${tone === 'info' ? 'bg-surface text-ink-2' : tone === 'warn' ? 'bg-warn/10 text-ink' : 'bg-danger/10 text-ink'}`}>
     {children}{action && <div className="mt-2">{action}</div>}
   </div>
 );
-const BTN = { primary: 'bg-pop text-white', ghost: 'bg-surface text-ink', gold: 'bg-sun text-ink' };
-export const Button = ({ kind = 'primary', className = '', ...p }: React.ButtonHTMLAttributes<HTMLButtonElement> & { kind?: keyof typeof BTN }) => <button {...p} className={`press inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 text-[15px] font-bold disabled:opacity-50 ${BTN[kind]} ${className}`} />;
-export const Chip = ({ active, ...p }: React.ButtonHTMLAttributes<HTMLButtonElement> & { active?: boolean }) => <button {...p} aria-pressed={active} className={`press min-h-10 shrink-0 rounded-full px-4 text-[15px] font-bold transition-colors duration-300 ${active ? 'bg-pop text-white' : 'bg-surface text-ink'}`} />;
-export const Input = (p: React.InputHTMLAttributes<HTMLInputElement>) => <input {...p} className={`min-h-13 w-full rounded-full border-0 bg-surface px-5 text-[16px] text-ink outline-none placeholder:text-muted focus:ring-2 focus:ring-gold ${p.className ?? ''}`} />;
+const BTN = { primary: 'bg-pop text-white hover:brightness-110 shadow-[inset_0_1px_0_rgba(255,255,255,.14)]', ghost: 'bg-surface text-ink hover:bg-sand', gold: 'bg-tile-sol text-ink hover:brightness-95' };
+export const Button = ({ kind = 'primary', className = '', ...p }: React.ButtonHTMLAttributes<HTMLButtonElement> & { kind?: keyof typeof BTN }) => <button {...p} className={`press inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-5 text-[15px] font-semibold tracking-[-.01em] transition-[filter,background-color,transform] disabled:pointer-events-none disabled:opacity-45 ${BTN[kind]} ${className}`} />;
+export const Chip = ({ active, ...p }: React.ButtonHTMLAttributes<HTMLButtonElement> & { active?: boolean }) => <button {...p} aria-pressed={active} className={`press min-h-9 shrink-0 rounded-full border px-3.5 text-[14px] font-medium transition-colors duration-200 ${active ? 'border-ink bg-ink text-paper' : 'border-line bg-paper text-ink-2 hover:border-muted/50'}`} />;
+export const Input = (p: React.InputHTMLAttributes<HTMLInputElement>) => <input {...p} className={`min-h-12 w-full rounded-xl border border-transparent bg-surface px-4 text-[16px] text-ink outline-none transition-[border-color,box-shadow] placeholder:text-muted focus:border-pop focus:shadow-[0_0_0_4px_var(--pop-soft)] ${p.className ?? ''}`} />;
+/** Fila de lista. Dentro de un contenedor .list forma un grupo como los ajustes del móvil. */
 export const Row = ({ to, icon, title, detail, onClick }: { to?: string; icon?: string; title: ReactNode; detail?: ReactNode; onClick?: () => void }) => {
-  const inner = <>{icon && <span className="grid size-9 shrink-0 place-items-center"><Icon name={icon} size={23} /></span>}<span className="min-w-0 flex-1"><span className="block font-serif text-[1.02rem] leading-[1.15]">{title}</span>{detail && <span className="mt-0.5 block text-sm leading-snug text-muted">{detail}</span>}</span><Icon name="chevron" size={18} className="text-muted" /></>;
-  const cls = 'flex w-full items-center gap-3 py-3 text-left';
+  const inner = <>{icon && <span className="row-icon niche !size-8 !rounded-[.6rem]"><Icon name={icon} size={18} /></span>}<span className="min-w-0 flex-1"><span className="block text-[15.5px] font-medium leading-snug">{title}</span>{detail && <span className="block text-[13.5px] leading-snug text-muted">{detail}</span>}</span><Icon name="chevron" size={16} className="text-muted/70" /></>;
+  const cls = 'row press hoverable flex min-h-14 w-full items-center gap-3 py-2.5 text-left transition-colors';
   return to ? <Link to={to} className={cls}>{inner}</Link> : <button onClick={onClick} className={cls}>{inner}</button>;
 };
+/** Grupo de filas con título opcional. */
+export const List = ({ title, children, className = '' }: { title?: string; children: ReactNode; className?: string }) => <div className={`reveal ${className}`}>{title && <h2 className="mb-2 px-1 text-[13px] font-medium text-muted">{title}</h2>}<div className="list">{children}</div></div>;
 
 export function useToast(): [ReactNode, (m: string) => void] {
   const [msg, setMsg] = useState<string | null>(null);
   useEffect(() => { if (!msg) return; const t = setTimeout(() => setMsg(null), 2600); return () => clearTimeout(t); }, [msg]);
-  return [msg ? <div role="status" className="sheet fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-full bg-pop px-5 py-3 text-sm font-bold text-white md:bottom-8">{msg}</div> : null, setMsg];
+  return [msg ? <div role="status" className="sheet fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-ink px-4 py-2.5 text-[14px] font-medium text-paper shadow-[var(--shadow-float)] md:bottom-8">{msg}</div> : null, setMsg];
 }
 export function FavoriteButton({ fav, className = '' }: { fav: Omit<Favorite, 'at'>; className?: string }) {
   const on = useStore((s) => s.favorites.some((f) => f.kind === fav.kind && f.id === fav.id));
-  return <button aria-pressed={on} aria-label={on ? 'Quitar de favoritos' : 'Guardar en favoritos'} onClick={() => toggleFavorite(fav)} className={`grid size-11 place-items-center rounded-full ${className}`}><Icon name="heart" fill={on} className={on ? 'text-gold' : ''} /></button>;
+  return <button aria-pressed={on} aria-label={on ? 'Quitar de favoritos' : 'Guardar en favoritos'} onClick={() => toggleFavorite(fav)} className={`press hoverable grid size-10 place-items-center rounded-full ${className}`}><span key={on ? 'on' : 'off'} className={on ? 'tab-pop' : ''}><Icon name="heart" size={20} fill={on} className={on ? 'text-gold' : ''} /></span></button>;
 }
 export function ShareButton({ text, reference, kicker, className = '' }: { text: string; reference: string; kicker?: string; className?: string }) {
   const [busy, setBusy] = useState(false); const [toast, show] = useToast();
-  return <><button aria-label="Compartir como imagen" disabled={busy} onClick={async () => { setBusy(true); const r = await shareImage({ text, reference, kicker }).catch(() => null); setBusy(false); if (r === 'downloaded') show('Imagen guardada en descargas'); if (r === null) show('No se ha podido crear la imagen'); }} className={`grid size-11 place-items-center rounded-full ${className}`}><Icon name="share" /></button>{toast}</>;
+  return <><button aria-label="Compartir como imagen" disabled={busy} onClick={async () => { setBusy(true); const r = await shareImage({ text, reference, kicker }).catch(() => null); setBusy(false); if (r === 'downloaded') show('Imagen guardada en descargas'); if (r === null) show('No se ha podido crear la imagen'); }} className={`press hoverable grid size-10 place-items-center rounded-full ${className}`}><Icon name="share" size={20} /></button>{toast}</>;
 }
 export const Paragraphs = ({ text }: { text: string }) => <>{text.split(/\n{2,}/).map((p, i) => <p key={i} className="whitespace-pre-line">{p}</p>)}</>;
 
@@ -112,7 +117,7 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
     vt.finished.catch(() => {}); vt.updateCallbackDone.catch(() => {});
     vt.ready.then(() => document.documentElement.animate({ clipPath: [`circle(0 at ${x}px ${y}px)`, `circle(${end}px at ${x}px ${y}px)`] }, { duration: 520, easing: 'cubic-bezier(.3,.7,.2,1)', pseudoElement: '::view-transition-new(root)' })).catch(() => {});
   };
-  return <button onClick={flip} aria-label={dark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'} className={`press grid size-10 place-items-center rounded-full bg-paper text-ink ${className}`}>
-    <span key={dark ? 'd' : 'l'} className="theme-spin"><Icon name={dark ? 'sun' : 'moon'} size={20} /></span>
+  return <button onClick={flip} aria-label={dark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'} className={`press hoverable grid size-10 place-items-center rounded-full text-ink ${className}`}>
+    <span key={dark ? 'd' : 'l'} className="theme-spin"><Icon name={dark ? 'sun' : 'moon'} size={19} /></span>
   </button>;
 }

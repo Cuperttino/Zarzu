@@ -58,7 +58,7 @@ function Router({ path }: { path: string }): ReactNode {
       if (seg[1] === 'clave') return <PasswordScreen />;
       return <ProfileHome />;
     case 'privacidad': return <PrivacyScreen />;
-    default: return <div className="p-10 text-center"><h1 className="text-3xl">Esta página no existe</h1><p className="mt-2"><Link to="/" className="font-bold text-gold underline">Volver al inicio</Link></p></div>;
+    default: return <div className="mx-auto max-w-md px-6 py-24 text-center"><p className="text-sm font-medium text-muted">Error 404</p><h1 className="mt-2 text-[2rem]">Esta página no existe</h1><p className="mt-6"><Link to="/" className="font-semibold text-gold">Volver al inicio</Link></p></div>;
   }
 }
 
@@ -84,15 +84,15 @@ function App() {
   const active = TABS.findIndex((t) => t.match(seg));
   const reading = /^\/biblia\/[^/]+\/\d+/.test(path) && path.includes('zen=1');
   return <div className="md:flex">
-    {!reading && <nav aria-label="Principal" className="tabbar safe-b fixed inset-x-0 bottom-0 z-30 bg-paper/85 backdrop-blur-xl md:sticky md:top-0 md:h-dvh md:w-52 md:shrink-0 md:bg-transparent md:p-6">
-      <Wordmark className="mb-8 hidden md:flex" />
+    {!reading && <nav aria-label="Principal" className="tabbar safe-b fixed inset-x-0 bottom-0 z-30 border-t border-line bg-paper/85 backdrop-blur-xl backdrop-saturate-150 md:sticky md:top-0 md:h-dvh md:w-60 md:shrink-0 md:border-r md:border-t-0 md:bg-paper md:px-4 md:py-6">
+      <Wordmark className="mb-8 hidden px-3 md:flex" />
       <ul className="relative grid grid-cols-5 md:flex md:flex-col md:gap-0.5">
         {active >= 0 && <li aria-hidden="true" className="tab-pill md:hidden" style={{ transform: `translateX(${active * 100}%)` }}><span /></li>}
-        {TABS.map((t, i) => { const on = i === active; return <li key={t.to} className="relative"><Link to={t.to} className={`flex flex-col items-center gap-0.5 pb-1 pt-2 text-[10.5px] transition-colors duration-300 md:flex-row md:gap-3 md:py-2.5 md:text-[15px] ${on ? 'font-bold text-gold md:text-ink' : 'text-muted hover:text-ink'}`}><span key={on ? 'on' : 'off'} className={on ? 'tab-pop' : ''}><Icon name={t.icon} size={24} /></span><span aria-current={on ? 'page' : undefined}>{t.label}</span></Link></li>; })}
+        {TABS.map((t, i) => { const on = i === active; return <li key={t.to} className="relative"><Link to={t.to} className={`flex flex-col items-center gap-0.5 pb-1.5 pt-2 text-[10.5px] font-medium transition-colors duration-200 md:flex-row md:gap-3 md:rounded-lg md:px-3 md:py-2 md:text-[14.5px] ${on ? 'text-gold md:bg-surface md:text-ink' : 'text-muted hover:text-ink md:hover:bg-surface'}`}><span key={on ? 'on' : 'off'} className={on ? 'tab-pop' : ''}><Icon name={t.icon} size={22} /></span><span aria-current={on ? 'page' : undefined}>{t.label}</span></Link></li>; })}
       </ul>
     </nav>}
     <div className={`nav-anim nav-${navDir} min-w-0 flex-1`} key={path.split('?')[0]}>
-      {__PREVIEW__ && <p className="bg-surface px-4 py-2 text-center text-xs leading-snug text-muted">Vista previa sin servidor. Lecturas, noticias y cuentas se activan al publicar la app.</p>}
+      {__PREVIEW__ && <p className="border-b border-line px-4 py-2 text-center text-xs leading-snug text-muted">Vista previa sin servidor. Lecturas, noticias y cuentas se activan al publicar la app.</p>}
       <Router path={path} />
     </div>
     <Onboarding />

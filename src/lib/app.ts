@@ -113,18 +113,18 @@ function wrap(ctx: CanvasRenderingContext2D, text: string, max: number) {
 export async function shareImage(opts: { text: string; reference: string; kicker?: string; filename?: string }): Promise<'shared' | 'downloaded' | 'cancelled'> {
   const W = 1080, H = 1350, c = document.createElement('canvas'); c.width = W; c.height = H;
   const x = c.getContext('2d')!;
-  await Promise.all([document.fonts.load('800 48px Bricolage'), document.fonts.load('400 30px Bricolage')]).catch(() => {});
-  const accent = '#ffb81c'; const g = x.createLinearGradient(0, 0, W * .4, H); g.addColorStop(0, '#e9e0ff'); g.addColorStop(.6, '#f5f0ff'); g.addColorStop(1, '#fff3cc'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+  await Promise.all([document.fonts.load('400 48px Newsreader'), document.fonts.load('600 44px Geist'), document.fonts.load('400 30px Geist')]).catch(() => {});
+  const accent = '#f5a524'; x.fillStyle = '#ffffff'; x.fillRect(0, 0, W, H); x.fillStyle = '#5b3fd6'; x.fillRect(84, 250, 6, 120);
   // Llama arriba
   x.save(); x.translate(84 - 30, 70 - 20); x.scale(.28, .28); x.translate(-100 + 100, 0); x.fillStyle = accent; x.fill(new Path2D('M262 76c14 66 -30 92 -58 130 -12 -14 -18 -32 -18 -50 -40 36 -66 84 -66 138 0 86 62 142 136 142s136-58 136-142c0-92-72-150-130-218Z')); x.restore();
   x.textAlign = 'left';
   let size = 96, lines: string[] = [];
-  for (; size >= 44; size -= 2) { x.font = `800 ${size}px Bricolage, Arial, sans-serif`; lines = wrap(x, opts.text, W - 170); if (lines.length * size * 1.08 < 780) break; }
-  const lh = size * 1.08; let y = 250 + size;
-  x.fillStyle = '#1e1640'; for (const l of lines) { x.fillText(l, 84, y); y += lh; }
-  x.font = '800 44px Bricolage, Arial, sans-serif'; x.fillStyle = '#5b2ee0'; x.fillText(opts.reference, 84, Math.min(y + 30, H - 180));
-  x.font = '800 56px Bricolage, Arial, sans-serif'; x.fillStyle = '#1e1640'; x.fillText('Zarzu', 84, H - 88);
-  if (opts.kicker) { x.font = '400 30px Bricolage, Arial, sans-serif'; x.fillStyle = '#6d6690'; x.textAlign = 'right'; x.fillText(opts.kicker, W - 84, H - 92); }
+  for (; size >= 44; size -= 2) { x.font = `400 ${size}px Newsreader, Georgia, serif`; lines = wrap(x, opts.text, W - 210); if (lines.length * size * 1.22 < 780) break; }
+  const lh = size * 1.22; let y = 250 + size * .85;
+  x.fillStyle = '#121216'; for (const l of lines) { x.fillText(l, 120, y); y += lh; }
+  x.font = '600 40px Geist, Arial, sans-serif'; x.fillStyle = '#5b3fd6'; x.fillText(opts.reference, 120, Math.min(y + 30, H - 180));
+  x.font = '600 48px Geist, Arial, sans-serif'; x.fillStyle = '#121216'; x.fillText('Zarzu', 84, H - 88);
+  if (opts.kicker) { x.font = '400 28px Geist, Arial, sans-serif'; x.fillStyle = '#6c6c75'; x.textAlign = 'right'; x.fillText(opts.kicker, W - 84, H - 92); }
   const blob = await new Promise<Blob>((res) => c.toBlob((b) => res(b!), 'image/png'));
   const file = new File([blob], opts.filename ?? 'zarzu.png', { type: 'image/png' });
   if (navigator.canShare?.({ files: [file] })) {

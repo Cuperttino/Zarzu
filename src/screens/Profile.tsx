@@ -1,6 +1,6 @@
 import { BADGES, earned, progressOf } from '../lib/badges.ts';
 import { useEffect, useMemo, useState } from 'react';
-import { Button, Chip, Icon, Input, Link, Notice, Page, Row, Section, Spinner, ThemeToggle } from '../components/ui.tsx';
+import { Button, Chip, Icon, Input, Link, List, Notice, Page, Row, Section, Spinner, ThemeToggle } from '../components/ui.tsx';
 import { AuthError, authAvailable, config, deleteLocalSession, getSession, onAuth, recover, rest, signIn, signOut, signUp, updatePassword } from '../lib/supabase.ts';
 import { pull, saveProfile, useStore, type Reminder } from '../lib/store.ts';
 import { disablePush, enablePush, navigate, pushSupported, usePromise, api } from '../lib/app.ts';
@@ -10,18 +10,30 @@ import { OfflineCard } from './Bible.tsx';
 function useSession() { const [s, set] = useState(getSession()); useEffect(() => onAuth(() => set(getSession())), []); return s; }
 const useAdmin = (uid?: string) => usePromise(async () => (uid && authAvailable() ? (await rest<unknown[]>('app_admins?select=user_id')).length > 0 : false), [uid]);
 
+/** Número que cuenta hasta su valor al aparecer. */
+function CountUp({ value, className }: { value: number; className?: string }) {
+  const [n, setN] = useState(() => (matchMedia('(prefers-reduced-motion: reduce)').matches ? value : 0));
+  useEffect(() => {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches || value === 0) { setN(value); return; }
+    let raf = 0; const t0 = performance.now(), dur = Math.min(900, 300 + value * 40);
+    const step = (t: number) => { const k = Math.min(1, (t - t0) / dur); setN(Math.round(value * (1 - Math.pow(1 - k, 3)))); if (k < 1) raf = requestAnimationFrame(step); };
+    raf = requestAnimationFrame(step); return () => cancelAnimationFrame(raf);
+  }, [value]);
+  return <span className={className}>{n}</span>;
+}
+
 export function streakOf(days: Set<string>, t = today()) { let n = 0, d = days.has(t) ? t : addDays(t, -1); while (days.has(d)) { n++; d = addDays(d, -1); } return n; }
 
 export function ProfileHome() {
   const s = useSession(), name = useStore((x) => x.name), place = useStore((x) => x.place), act = useStore((x) => x.activity), favs = useStore((x) => x.favorites), mySaint = useStore((x) => x.mySaint), admin = useAdmin(s?.user.id);
   const streak = useMemo(() => streakOf(new Set(act.map((a) => a.day))), [act]);
-  return <Page title={name || "Perfil"} right={<ThemeToggle className="!bg-surface" />}>
-    <p className="text-[15px] text-muted">{s ? s.user.email : 'Tus datos están solo en este dispositivo'}</p>
-    <div className="mt-4 flex items-end gap-2"><span className="font-serif text-[4.29rem] leading-[1]">{streak}</span><Icon name='flame' fill={streak > 0} size={44} className={`mb-0.5 ${streak ? 'text-flame' : 'text-muted'}`} /><span className="mb-1 text-[15px] leading-tight text-muted">{streak === 1 ? 'día de racha' : 'días de racha'}</span></div>
-    {place && <p className="mt-2 flex items-center gap-1 text-sm text-muted"><Icon name="pin" size={14} />{place.name}</p>}
+  return <Page title={name || "Perfil"} right={<ThemeToggle />}>
+    <p className="text-[14.5px] text-muted">{s ? s.user.email : 'Tus datos están solo en este dispositivo'}</p>
+    <div className="mt-6 flex items-center gap-4 rounded-2xl border border-line p-4"><span className={`grid size-14 shrink-0 place-items-center rounded-2xl ${streak ? 'bg-tile-sol text-flame' : 'bg-surface text-muted'}`}><Icon name='flame' fill={streak > 0} size={30} className={streak ? 'medal-in' : ''} /></span><span><CountUp value={streak} className="tabular block text-[2.4rem] font-semibold leading-none tracking-[-.04em]" /><span className="mt-1 block text-[13.5px] text-muted">{streak === 1 ? 'día de racha' : 'días de racha'}</span></span></div>
+    {place && <p className="mt-3 flex items-center gap-1 text-[13.5px] text-muted"><Icon name="pin" size={14} />{place.name}</p>}
     {!s && authAvailable() && <Link to="/perfil/entrar" className="mt-4 block"><Button className="w-full">Entrar o crear cuenta</Button></Link>}
     {!authAvailable() && <div className="mt-4"><Notice>Las cuentas y la sincronización entre dispositivos se activarán cuando la app publicada se conecte a Supabase. Mientras tanto, todo se guarda en este dispositivo.</Notice></div>}
-    <Section className="!mt-5"><div>
+    <List className="mt-6">
       <Row icon="heart" to="/perfil/favoritos" title="Favoritos" detail={favs.length === 1 ? '1 guardado' : `${favs.length} guardados`} />
       <Row icon="pen" to="/perfil/diario" title="Mi diario" detail="Solo lo ves tú" />
       <Row icon="saint" to="/perfil/santo" title="Tu santo" detail={mySaint ? mySaint.name : 'Elige tu santo'} />
@@ -32,7 +44,7 @@ export function ProfileHome() {
       <OfflineCard />
       <Row icon="shield" to="/privacidad" title="Privacidad y fuentes" />
       {admin.data && <Row icon="text" to="/perfil/admin" title="Administración" detail="Horarios confirmados y contenido" />}
-    </div></Section>
+    </List>
     {s && <div className="mt-6"><Button kind="ghost" className="w-full" onClick={() => void signOut()}>Cerrar sesión</Button></div>}
   </Page>;
 }
@@ -57,8 +69,8 @@ export function AuthScreen() {
       {mode !== 'forgot' && <Input required type="password" value={pw} minLength={mode === 'up' ? 8 : undefined} onChange={(e) => setPw(e.target.value)} placeholder="Contraseña" aria-label="Contraseña" autoComplete={mode === 'in' ? 'current-password' : 'new-password'} />}
       {err && <Notice tone="error">{err}</Notice>}{msg && <Notice>{msg}</Notice>}
       <Button className="w-full" disabled={busy}>{busy ? 'Un momento…' : mode === 'in' ? 'Entrar' : mode === 'up' ? 'Crear cuenta' : 'Enviar enlace'}</Button>
-      <div className="flex justify-between gap-2 pt-1 text-sm">
-        <button type="button" className="min-h-11 text-gold" onClick={() => setMode(mode === 'in' ? 'up' : 'in')}>{mode === 'in' ? 'Crear una cuenta' : 'Ya tengo cuenta'}</button>
+      <div className="flex justify-between gap-2 pt-1 text-[14px]">
+        <button type="button" className="min-h-11 font-medium text-gold" onClick={() => setMode(mode === 'in' ? 'up' : 'in')}>{mode === 'in' ? 'Crear una cuenta' : 'Ya tengo cuenta'}</button>
         {mode === 'in' && <button type="button" className="min-h-11 text-muted" onClick={() => setMode('forgot')}>He olvidado la contraseña</button>}
       </div>
       {mode === 'up' && <p className="text-xs leading-relaxed text-muted">Lo que ya tengas en este dispositivo pasará a tu cuenta. Consulta <Link className="underline" to="/privacidad">la privacidad</Link>.</p>}
@@ -77,11 +89,11 @@ export function SettingsScreen() {
   const settings = useStore((s) => s.settings), name = useStore((s) => s.name), n = useStore((s) => s.notifications), place = useStore((s) => s.place), [msg, setMsg] = useState(''), session = useSession();
   const setReminder = (id: Reminder['id'], p: Partial<Reminder>) => saveProfile({ notifications: { ...n, reminders: n.reminders.map((r) => (r.id === id ? { ...r, ...p } : r)) } });
   return <Page title="Ajustes" back="/perfil">
-    <label className="block"><span className="text-sm text-muted">Tu nombre, para el saludo</span><Input className="mt-1" value={name} maxLength={40} onChange={(e) => saveProfile({ name: e.target.value })} /></label>
+    <label className="block"><span className="text-[13px] font-medium text-muted">Tu nombre, para el saludo</span><Input className="mt-1" value={name} maxLength={40} onChange={(e) => saveProfile({ name: e.target.value })} /></label>
     <Section title="Apariencia">
       <div className="flex gap-2">{([['light', 'Claro'], ['dark', 'Oscuro'], ['auto', 'Como el móvil']] as const).map(([k, l]) => <Chip key={k} active={settings.theme === k} onClick={() => saveProfile({ settings: { ...settings, theme: k } })}>{l}</Chip>)}</div>
-      <p className="mt-4 text-sm text-muted">Tamaño de la letra de lectura</p>
-      <div className="mt-2 flex items-center gap-3"><input aria-label="Tamaño de letra" type="range" min="0.9" max="1.4" step="0.05" value={settings.readingScale} onChange={(e) => saveProfile({ settings: { ...settings, readingScale: +e.target.value } })} className="flex-1 accent-[var(--gold)]" /><span className="w-12 text-right text-sm">{Math.round(settings.readingScale * 100)} %</span></div>
+      <p className="mt-5 text-[13px] font-medium text-muted">Tamaño de la letra de lectura</p>
+      <div className="mt-2 flex items-center gap-3"><input aria-label="Tamaño de letra" type="range" min="0.9" max="1.4" step="0.05" value={settings.readingScale} onChange={(e) => saveProfile({ settings: { ...settings, readingScale: +e.target.value } })} className="flex-1 accent-[var(--pop)]" /><span className="tabular w-12 text-right text-[14px] font-medium">{Math.round(settings.readingScale * 100)} %</span></div>
       <p className="reading mt-2 text-muted">Este es el tamaño con el que leerás.</p>
     </Section>
     <Section title="Recordatorios">
@@ -89,10 +101,10 @@ export function SettingsScreen() {
       {n.enabled ? <Button kind="ghost" className="mt-3" onClick={() => void disablePush()}>Desactivar recordatorios</Button> : <Button className="mt-3" onClick={async () => setMsg((await enablePush().catch((e: Error) => e.message)) ?? 'Recordatorios activados.')}><Icon name="bell" size={18} />Activar recordatorios</Button>}
       {msg && <div className="mt-3"><Notice>{msg}</Notice></div>}
       {!pushSupported() && /iPhone|iPad/.test(navigator.userAgent) && <p className="mt-2 text-sm text-muted">En iPhone funcionan al añadir Zarzu a la pantalla de inicio desde Safari.</p>}
-      <ul className="mt-3">{n.reminders.map((r) => <li key={r.id} className="flex items-center gap-3 border-b border-line py-3">
-        <input id={`r-${r.id}`} type="checkbox" checked={r.enabled} onChange={(e) => setReminder(r.id, { enabled: e.target.checked })} className="size-5 accent-[var(--gold)]" />
-        <label htmlFor={`r-${r.id}`} className="min-w-0 flex-1"><span className="block font-medium">{LABEL[r.id][0]}</span><span className="text-sm text-muted">{LABEL[r.id][1]}</span></label>
-        <input type="time" aria-label={`Hora de ${LABEL[r.id][0]}`} value={r.time} onChange={(e) => setReminder(r.id, { time: e.target.value })} className="rounded-lg border border-line bg-surface px-2 py-1.5 text-ink" />
+      <ul className="list mt-4">{n.reminders.map((r) => <li key={r.id} className="flex items-center gap-3 px-4 py-3">
+        <input id={`r-${r.id}`} type="checkbox" checked={r.enabled} onChange={(e) => setReminder(r.id, { enabled: e.target.checked })} className="size-5 accent-[var(--pop)]" />
+        <label htmlFor={`r-${r.id}`} className="min-w-0 flex-1"><span className="block text-[15px] font-medium">{LABEL[r.id][0]}</span><span className="text-[13px] text-muted">{LABEL[r.id][1]}</span></label>
+        <input type="time" aria-label={`Hora de ${LABEL[r.id][0]}`} value={r.time} onChange={(e) => setReminder(r.id, { time: e.target.value })} className="tabular rounded-lg border border-line bg-paper px-2 py-1.5 text-ink" />
       </li>)}</ul>
     </Section>
     {place && <Section title="Localidad favorita"><div className="flex items-center justify-between gap-2"><span>{place.name}</span><Button kind="ghost" onClick={() => saveProfile({ place: null })}>Quitar</Button></div></Section>}
@@ -110,7 +122,7 @@ export function FavoritesScreen() {
   const kinds = [...new Set(favs.map((f) => f.kind))];
   return <Page title="Favoritos" back="/perfil">
     {kinds.length > 1 && <div className="no-bar -mx-5 mb-2 flex gap-2 overflow-x-auto px-5"><Chip active={!k} onClick={() => setK('')}>Todos</Chip>{kinds.map((x) => <Chip key={x} active={k === x} onClick={() => setK(x)}>{L[x]}</Chip>)}</div>}
-    <ul>{favs.filter((f) => !k || f.kind === k).map((f) => { const inner = <><span className="font-bold text-gold">{f.title}</span>{f.body && <span className="mt-1 block font-serif text-[1.12rem] leading-[1.14]">{f.body}</span>}</>; return <li key={f.kind + f.id} className="border-b border-line py-3">{f.link?.startsWith('/') ? <Link to={f.link}>{inner}</Link> : f.link ? <a href={f.link} target="_blank" rel="noreferrer">{inner}</a> : inner}</li>; })}</ul>
+    <ul>{favs.filter((f) => !k || f.kind === k).map((f) => { const inner = <><span className="text-[13px] font-semibold text-gold">{f.title}</span>{f.body && <span className="scripture mt-1 block text-[1.15rem] leading-[1.3]">{f.body}</span>}</>; return <li key={f.kind + f.id} className="border-b border-line py-3.5">{f.link?.startsWith('/') ? <Link to={f.link}>{inner}</Link> : f.link ? <a href={f.link} target="_blank" rel="noreferrer">{inner}</a> : inner}</li>; })}</ul>
     {!favs.length && <p className="py-6 text-center text-[15px] text-muted">Toca el corazón en un versículo, una oración, un santo o un templo para guardarlo aquí.</p>}
   </Page>;
 }
@@ -123,10 +135,10 @@ export function StatsScreen() {
   const weeks = Array.from({ length: 12 }, (_, w) => Array.from({ length: 7 }, (_, d) => addDays(start, w * 7 + d)));
   const stats: [string, number][] = [['Días de racha', streakOf(days)], ['Días activos', days.size], ['Evangelios leídos', count('gospel')], ['Capítulos de la Biblia', count('reading')], ['Rosarios terminados', count('rosary')], ['Oraciones', count('prayer')], ['Versículos recibidos', new Set(verses.map((v) => v.id)).size]];
   return <Page title="Estadísticas" back="/perfil">
-    <dl className="grid grid-cols-2 gap-x-5 sm:grid-cols-3">{stats.map(([l, v]) => <div key={l} className="border-b border-line py-3"><dd className="font-serif text-[2.56rem] leading-none">{v}</dd><dt className="mt-1 text-[15px] leading-tight">{l}</dt></div>)}</dl>
+    <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-4">{stats.map(([l, v], i) => <div key={l} className={`flex flex-col-reverse bg-paper p-4 ${i === 0 ? 'col-span-2' : ''}`}><dt className="mt-1.5 text-[13.5px] leading-tight text-muted">{l}</dt><dd><CountUp value={v} className={`tabular block font-semibold leading-none tracking-[-.04em] ${i === 0 ? 'text-[2.8rem] text-gold' : 'text-[2rem]'}`} /></dd></div>)}</dl>
     <Section title="Últimas doce semanas">
-      <div className="flex gap-1" role="img" aria-label={`${days.size} días activos en total`}>{weeks.map((w, i) => <div key={i} className="flex flex-1 flex-col gap-1">{w.map((d) => <span key={d} title={shortDate(d)} className={`aspect-square rounded-[5px] ${d > t ? 'bg-transparent' : days.has(d) ? 'bg-gold' : 'bg-surface'}`} />)}</div>)}</div>
-      <p className="mt-2 text-sm text-muted">Cada casilla es un día; las de color son días en los que leíste o rezaste. Sin puntuaciones: esto es solo para ti.</p>
+      <div className="flex gap-1" role="img" aria-label={`${days.size} días activos en total`}>{weeks.map((w, i) => <div key={i} className="flex flex-1 flex-col gap-1">{w.map((d, j) => <span key={d} title={shortDate(d)} style={{ animationDelay: `${(i + j) * 22}ms` }} className={`cell-in aspect-square rounded-[4px] ${d > t ? 'bg-transparent' : days.has(d) ? 'bg-pop' : 'bg-surface'} ${d === t ? 'ring-1 ring-ink/40 ring-offset-1 ring-offset-paper' : ''}`} />)}</div>)}</div>
+      <p className="mt-3 text-[13.5px] text-muted">Cada casilla es un día; las de color son días en los que leíste o rezaste. Sin puntuaciones: esto es solo para ti.</p>
     </Section>
   </Page>;
 }
@@ -134,13 +146,13 @@ export function HistoryScreen() {
   const act = useStore((s) => s.activity), [k, setK] = useState<'lecturas' | 'oraciones'>('lecturas');
   const list = act.filter((a) => (k === 'lecturas' ? a.kind === 'reading' || a.kind === 'gospel' : a.kind === 'prayer' || a.kind === 'rosary'));
   return <Page title="Historial" back="/perfil"><div className="flex gap-2"><Chip active={k === 'lecturas'} onClick={() => setK('lecturas')}>Lecturas</Chip><Chip active={k === 'oraciones'} onClick={() => setK('oraciones')}>Oraciones</Chip></div>
-    <ul className="mt-3">{list.slice(0, 200).map((a) => <li key={a.kind + a.ref + a.day} className="flex justify-between gap-3 border-b border-line py-3"><span>{a.label}</span><time className="shrink-0 text-sm text-muted">{shortDate(a.day)}</time></li>)}</ul>
+    <ul className="mt-3">{list.slice(0, 200).map((a) => <li key={a.kind + a.ref + a.day} className="flex justify-between gap-3 border-b border-line py-3 text-[15px]"><span>{a.label}</span><time className="tabular shrink-0 text-[13px] text-muted">{shortDate(a.day)}</time></li>)}</ul>
     {!list.length && <p className="py-6 text-center text-[15px] text-muted">Aún no hay nada aquí.</p>}</Page>;
 }
 export const PrivacyScreen = () => <Page title="Privacidad y fuentes" back="/perfil"><div className="space-y-5 text-[15px] leading-relaxed">
-  <div><h2 className="text-xl">Tus datos</h2><p className="mt-1">Sin cuenta, todo se guarda solo en tu dispositivo. Con cuenta, tus favoritos e historial se guardan en Supabase con reglas que impiden que otras personas accedan a ellos.</p><p className="mt-2">Tu ubicación solo se usa cuando pulsas el botón y no se guarda.</p></div>
-  <div><h2 className="text-xl">Fuentes</h2><ul className="mt-1 list-disc space-y-1 pl-5"><li>Biblia: traducción de Félix Torres Amat (siglo XIX), de dominio público. Transcripción del proyecto Iter Catholicum; Ester 11-16 y Daniel 13-14 proceden de Wikisource.</li><li>Lecturas del día: Evangelio del día (evangelizo.org), con enlace a su web.</li><li>Calendario: calculado en la app según las normas litúrgicas, con el propio de España.</li><li>Noticias: Vatican News, Conferencia Episcopal Española, Alfa y Omega, Vida Nueva y la Archidiócesis de Sevilla. Siempre enlazan al medio original.</li><li>Mapa y templos: © colaboradores de OpenStreetMap (ODbL), Overpass y Nominatim.</li><li>Biografías ampliadas: Wikipedia (CC BY-SA).</li></ul></div>
-  <div><h2 className="text-xl">Contenido</h2><p className="mt-1">Las reflexiones y mensajes diarios son textos propios de la app. La app no usa inteligencia artificial. Nada de esto sustituye a la enseñanza de la Iglesia ni al consejo de un sacerdote.</p></div>
+  <div><h2 className="text-[1.1rem] font-semibold">Tus datos</h2><p className="mt-1">Sin cuenta, todo se guarda solo en tu dispositivo. Con cuenta, tus favoritos e historial se guardan en Supabase con reglas que impiden que otras personas accedan a ellos.</p><p className="mt-2">Tu ubicación solo se usa cuando pulsas el botón y no se guarda.</p></div>
+  <div><h2 className="text-[1.1rem] font-semibold">Fuentes</h2><ul className="mt-1 list-disc space-y-1 pl-5"><li>Biblia: traducción de Félix Torres Amat (siglo XIX), de dominio público. Transcripción del proyecto Iter Catholicum; Ester 11-16 y Daniel 13-14 proceden de Wikisource.</li><li>Lecturas del día: Evangelio del día (evangelizo.org), con enlace a su web.</li><li>Calendario: calculado en la app según las normas litúrgicas, con el propio de España.</li><li>Noticias: Vatican News, Conferencia Episcopal Española, Alfa y Omega, Vida Nueva y la Archidiócesis de Sevilla. Siempre enlazan al medio original.</li><li>Mapa y templos: © colaboradores de OpenStreetMap (ODbL), Overpass y Nominatim.</li><li>Biografías ampliadas: Wikipedia (CC BY-SA).</li></ul></div>
+  <div><h2 className="text-[1.1rem] font-semibold">Contenido</h2><p className="mt-1">Las reflexiones y mensajes diarios son textos propios de la app. La app no usa inteligencia artificial. Nada de esto sustituye a la enseñanza de la Iglesia ni al consejo de un sacerdote.</p></div>
 </div></Page>;
 
 // ---------- Administración (las políticas RLS impiden escribir a quien no es admin) ----------
@@ -161,8 +173,8 @@ function SchedAdmin() {
     <p className="text-sm text-muted">Solo publica horarios comprobados en la web de la parroquia o de la diócesis. La fuente y la fecha son obligatorias.</p>
     <Input required pattern="(node|way|relation)/[0-9]+" value={f.osm_ref} onChange={set('osm_ref')} placeholder="Referencia OSM, como way/123456" aria-label="Referencia OSM" />
     <Input required value={f.church_name} onChange={set('church_name')} placeholder="Nombre del templo" aria-label="Nombre del templo" />
-    <select aria-label="Tipo" value={f.kind} onChange={set('kind')} className="min-h-12 w-full rounded-xl border border-line bg-surface px-3 text-ink"><option value="mass">Misas</option><option value="confession">Confesiones</option><option value="opening">Apertura</option></select>
-    <textarea required rows={3} value={f.schedule} onChange={set('schedule')} placeholder={'Horario, tal como aparece en la fuente'} aria-label="Horario" className="w-full rounded-xl border border-line bg-surface p-3 text-[16px] text-ink" />
+    <select aria-label="Tipo" value={f.kind} onChange={set('kind')} className="min-h-12 w-full rounded-xl border border-line bg-paper px-3 text-ink"><option value="mass">Misas</option><option value="confession">Confesiones</option><option value="opening">Apertura</option></select>
+    <textarea required rows={3} value={f.schedule} onChange={set('schedule')} placeholder={'Horario, tal como aparece en la fuente'} aria-label="Horario" className="w-full rounded-xl border border-line bg-paper p-3 text-[16px] text-ink" />
     <Input required type="url" value={f.source_url} onChange={set('source_url')} placeholder="Enlace a la fuente" aria-label="Enlace a la fuente" />
     <Input value={f.source_name} onChange={set('source_name')} placeholder="Nombre de la fuente" aria-label="Nombre de la fuente" />
     <label className="block text-sm text-muted">Fecha de comprobación<Input required type="date" value={f.checked_on} onChange={set('checked_on')} className="mt-1" /></label>
@@ -187,8 +199,8 @@ function ReportsAdmin() {
 }
 function ReportItem({ r, onDone }: { r: Report; onDone: (p: { schedule: string; source: string; sourceName: string } | null) => void }) {
   const [schedule, setSchedule] = useState(r.schedule), [source, setSource] = useState(r.source_url ?? ''), [sourceName, setSourceName] = useState('');
-  return <li className="rounded-[22px] bg-surface p-4">
-    <p className="font-bold">{r.church_name}</p><p className="text-xs text-muted">{r.osm_ref}. Enviado el {r.created_at.slice(0, 10)}</p>
+  return <li className="rounded-2xl border border-line p-4">
+    <p className="font-semibold">{r.church_name}</p><p className="text-xs text-muted">{r.osm_ref}. Enviado el {r.created_at.slice(0, 10)}</p>
     {r.note && <p className="mt-1 text-sm">Nota: {r.note}</p>}
     <form className="mt-2 space-y-2" onSubmit={(e) => { e.preventDefault(); onDone({ schedule, source, sourceName }); }}>
       <textarea required rows={3} value={schedule} onChange={(e) => setSchedule(e.target.value)} aria-label="Horario" className="w-full rounded-xl border border-line bg-paper p-3 text-[16px] text-ink" />
@@ -205,8 +217,8 @@ function ContentAdmin() {
   const K: Record<string, string> = { daily_message: 'Mensaje del día', morning_reflection: 'Reflexión de la mañana', announcement: 'Aviso destacado' };
   return <><form className="mt-4 space-y-2" onSubmit={async (e) => { e.preventDefault(); setErr(''); try { await rest('content_items', { method: 'POST', prefer: 'return=minimal', body: { ...f, updated_by: getSession()!.user.id } }); setF(empty); setN(n + 1); } catch (x) { setErr((x as Error).message); } }}>
     <p className="text-sm text-muted">Sustituye el contenido automático del inicio en la fecha indicada.</p>
-    <select aria-label="Tipo" value={f.kind} onChange={(e) => setF({ ...f, kind: e.target.value })} className="min-h-12 w-full rounded-xl border border-line bg-surface px-3 text-ink">{Object.entries(K).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
-    <textarea required rows={4} value={f.body} onChange={(e) => setF({ ...f, body: e.target.value })} placeholder="Texto" aria-label="Texto" className="w-full rounded-xl border border-line bg-surface p-3 text-[16px] text-ink" />
+    <select aria-label="Tipo" value={f.kind} onChange={(e) => setF({ ...f, kind: e.target.value })} className="min-h-12 w-full rounded-xl border border-line bg-paper px-3 text-ink">{Object.entries(K).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
+    <textarea required rows={4} value={f.body} onChange={(e) => setF({ ...f, body: e.target.value })} placeholder="Texto" aria-label="Texto" className="w-full rounded-xl border border-line bg-paper p-3 text-[16px] text-ink" />
     <Input required type="date" aria-label="Fecha de publicación" value={f.publish_on} onChange={(e) => setF({ ...f, publish_on: e.target.value })} />
     {err && <Notice tone="error">{err}</Notice>}<Button className="w-full">Publicar</Button></form>
     <ul className="mt-5">{list.data?.map((x) => <li key={x.id} className="flex items-start gap-2 border-b border-line py-3"><span className="min-w-0 flex-1"><span className="text-sm text-gold">{K[x.kind]}. {fullDate(x.publish_on)}</span><span className="mt-1 block line-clamp-3 text-sm">{x.body}</span></span><button aria-label="Borrar" className="grid size-11 place-items-center text-muted" onClick={async () => { await rest(`content_items?id=eq.${x.id}`, { method: 'DELETE' }); setN(n + 1); }}><Icon name="trash" size={18} /></button></li>)}</ul></>;

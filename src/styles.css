@@ -1,127 +1,173 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Zarzu: colores claros (lila, blanco y amarillo), la llama como logo y letra grotesca con carácter. */
-@font-face { font-family: Bricolage; src: url('/fonts/Bricolage.woff') format('woff'); font-weight: 400 800; font-display: swap; }
-@font-face { font-family: Lectura; src: url('/fonts/CrimsonPro-Regular.woff') format('woff'); font-weight: 400 800; font-display: swap; }
+/*
+ * Zarzu, sistema visual.
+ * Blanco y un gris neutro para agrupar; violeta solo para acciones y estado activo; ámbar para la llama.
+ * Geist para la interfaz y Newsreader para la Palabra y las oraciones.
+ * El color litúrgico del día aparece como una cinta de misal, nunca como fondo.
+ */
+@font-face { font-family: Geist; src: url('/fonts/Geist.woff') format('woff'); font-weight: 400 700; font-display: swap; }
+@font-face { font-family: Newsreader; src: url('/fonts/Newsreader.woff') format('woff'); font-weight: 400 600; font-display: swap; }
+@font-face { font-family: Newsreader; src: url('/fonts/Newsreader-Italic.woff') format('woff'); font-weight: 400; font-style: italic; font-display: swap; }
 
 :root {
-  --paper: #fbf9ff; --surface: #f3eeff; --sand: #e7deff; --line: #ece6fa;
-  --ink: #1e1640; --muted: #6d6690; --gold: #5b2ee0; --pop: #7048f5; --sun: #ffd447; --flame: #ffb81c;
-  --hero: linear-gradient(165deg, #e9e0ff 0%, #f5f0ff 55%, #fff3cc 100%); --tile-lila: #ebe3ff; --tile-sol: #fff1bf; --radar-glow: var(--sun);
-  --gold-soft: var(--ink); --pop-ink: #1e1640; --navy: var(--pop); --on-navy: #fff; --on-navy-muted: var(--muted);
-  --lit: var(--gold); --on-lit: #fff; --danger: #c81e1e; --ok: #15803d; --warn: #a16207; --reading-scale: 1;
+  --paper: #ffffff; --surface: #f5f5f7; --sand: #ebebef; --line: #e6e6ea;
+  --ink: #121216; --ink-2: #3a3a42; --muted: #6c6c75;
+  --gold: #5b3fd6; --pop: #5b3fd6; --pop-soft: #efebfe; --sun: #f5a524; --flame: #f5a524;
+  --tile-lila: var(--pop-soft); --tile-sol: #fff4db; --radar-glow: var(--pop);
+  --gold-soft: var(--ink); --pop-ink: var(--ink); --navy: var(--pop); --on-navy: #fff; --on-navy-muted: var(--muted);
+  --lit: var(--gold); --on-lit: #fff; --danger: #d92d20; --ok: #12805c; --warn: #b54708; --reading-scale: 1;
+  --shadow-float: 0 1px 2px rgba(18, 18, 22, .06), 0 12px 32px -8px rgba(18, 18, 22, .18);
 }
 .dark {
-  --paper: #120828; --surface: #21123f; --sand: #2e1b54; --line: #2e1b54;
-  --ink: #ffffff; --muted: #b3a8d1; --gold: #ffd447; --pop: #7048f5; --danger: #f87171; --ok: #4ade80; --warn: #facc15;
-  --hero: linear-gradient(165deg, #2c1a5c 0%, #1b0f3a 100%); --tile-lila: #2e1b5c; --tile-sol: #3a3012; --radar-glow: #7048f5;
+  --paper: #0c0c0f; --surface: #17171b; --sand: #24242a; --line: #26262c;
+  --ink: #f2f2f4; --ink-2: #c9c9d0; --muted: #8e8e98;
+  --gold: #a99bff; --pop: #7c66f0; --pop-soft: #221d3d; --sun: #f5b544; --flame: #f5b544;
+  --tile-sol: #2a2312; --radar-glow: var(--pop);
+  --danger: #f97066; --ok: #47cd89; --warn: #fdb022;
+  --shadow-float: 0 1px 2px rgba(0, 0, 0, .4), 0 16px 40px -8px rgba(0, 0, 0, .6);
   color-scheme: dark;
 }
 
 @theme inline {
-  --color-paper: var(--paper); --color-surface: var(--surface); --color-sand: var(--sand); --color-line: var(--line); --color-ink: var(--ink); --color-muted: var(--muted);
+  --color-paper: var(--paper); --color-surface: var(--surface); --color-sand: var(--sand); --color-line: var(--line); --color-ink: var(--ink); --color-ink-2: var(--ink-2); --color-muted: var(--muted);
   --color-gold: var(--gold); --color-gold-soft: var(--gold-soft); --color-navy: var(--navy); --color-on-navy: var(--on-navy); --color-on-navy-muted: var(--on-navy-muted);
-  --color-lit: var(--lit); --color-on-lit: var(--on-lit); --color-danger: var(--danger); --color-ok: var(--ok); --color-warn: var(--warn); --color-pop-ink: var(--pop-ink); --color-pop: var(--pop); --color-sun: var(--sun); --color-flame: var(--flame);
-  --font-serif: Bricolage, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-  --font-sans: Bricolage, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+  --color-lit: var(--lit); --color-on-lit: var(--on-lit); --color-danger: var(--danger); --color-ok: var(--ok); --color-warn: var(--warn); --color-pop-ink: var(--pop-ink); --color-pop: var(--pop); --color-pop-soft: var(--pop-soft); --color-sun: var(--sun); --color-flame: var(--flame); --color-tile-sol: var(--tile-sol);
+  --font-sans: Geist, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+  --font-serif: Geist, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+  --font-text: Newsreader, 'Iowan Old Style', Georgia, serif;
 }
 
-html { -webkit-text-size-adjust: 100%; }
-html, body { background: var(--paper); color: var(--ink); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
-body { min-height: 100dvh; overflow-x: hidden; }
-:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 8px; }
+html { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }
+html, body { background: var(--paper); color: var(--ink); font-family: var(--font-sans); font-feature-settings: 'kern'; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+body { min-height: 100dvh; overflow-x: hidden; font-size: 16px; line-height: 1.5; }
+::selection { background: color-mix(in srgb, var(--pop) 22%, transparent); }
+:focus-visible { outline: 2px solid var(--pop); outline-offset: 2px; border-radius: 10px; }
 button { cursor: pointer; }
-@layer base { h1, h2, h3 { font-family: var(--font-serif); font-weight: 800; letter-spacing: -.025em; text-wrap: balance; } }
-.font-serif { font-weight: 800; letter-spacing: -.02em; }
-.reading { font-family: Lectura, Georgia, serif; font-size: calc(1.27rem * var(--reading-scale)); line-height: 1.48; }
-.reading p + p { margin-top: .85em; }
+@layer base { h1, h2, h3 { font-family: var(--font-sans); font-weight: 600; letter-spacing: -.022em; text-wrap: balance; } }
+/* «font-serif» se usa en toda la app para títulos de elementos: ahora es Geist seminegrita. */
+.font-serif { font-weight: 600; letter-spacing: -.015em; }
+/* Texto sagrado: lecturas, oraciones, versículos. */
+.scripture { font-family: var(--font-text); font-weight: 400; letter-spacing: -.005em; font-optical-sizing: auto; }
+.reading { font-family: var(--font-text); font-size: calc(1.2rem * var(--reading-scale)); line-height: 1.6; font-optical-sizing: auto; }
+.reading p + p { margin-top: .9em; }
+.tabular { font-variant-numeric: tabular-nums; }
 .safe-b { padding-bottom: env(safe-area-inset-bottom); }
 .safe-t { padding-top: calc(env(safe-area-inset-top) + .5rem); }
 .no-bar { scrollbar-width: none; } .no-bar::-webkit-scrollbar { display: none; }
 
-/* Burbuja redonda de cada icono. */
-.niche { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 999px; background: var(--paper); }
-.c-ink .niche, .c-sun .niche { background: var(--paper); color: var(--gold); }
-
-.c-ink { background: var(--tile-lila) !important; color: var(--ink) !important; }
+/* Icono en cuadrado redondeado (estilo ajustes). */
+.niche { display: grid; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: .7rem; background: var(--pop-soft); color: var(--gold); }
+.c-ink .niche, .c-sun .niche { background: var(--paper); }
+.c-ink { background: var(--pop-soft) !important; color: var(--ink) !important; }
 .c-sun { background: var(--tile-sol) !important; color: var(--ink) !important; }
-.soft-hero { background: var(--hero); color: var(--ink); }
+.soft-hero { background: var(--paper); color: var(--ink); }
 
-/* Radar de misas: un barrido que gira y un pulso en las misas que empiezan pronto. */
-.radar-sweep { background: conic-gradient(from 0deg, transparent 0 78%, color-mix(in srgb, var(--pop) 28%, transparent) 100%); animation: sweep 3.6s linear infinite; }
+/* Lista agrupada: un único bloque gris con separadores finos, en lugar de muchas tarjetas. */
+.list { background: var(--surface); border-radius: 1rem; overflow: hidden; }
+.list > * + * { box-shadow: inset 0 1px 0 var(--line); }
+.list .row { padding-inline: .875rem; }
+.list .row-icon + * { position: relative; }
+:not(.list) > .row + .row { box-shadow: inset 0 1px 0 var(--line); }
+
+/* Cinta de misal con el color litúrgico del día. */
+.ribbon { display: inline-block; width: .55rem; height: 1rem; clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 72%, 0 100%); }
+
+/* Cargando: brillo que recorre el bloque. */
+.pulse-soft { background: linear-gradient(90deg, var(--surface) 0%, var(--sand) 50%, var(--surface) 100%); background-size: 200% 100%; animation: shimmer 1.4s ease-in-out infinite; color: transparent; }
+@keyframes shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+.spinner { width: 1.25rem; height: 1.25rem; border-radius: 999px; border: 2px solid var(--sand); border-top-color: var(--pop); animation: spin .8s linear infinite; }
+
+/* Radar de misas. */
+.radar-sweep { background: conic-gradient(from 0deg, transparent 0 82%, color-mix(in srgb, var(--pop) 14%, transparent) 100%); animation: sweep 4s linear infinite; }
 @keyframes sweep { to { transform: rotate(360deg); } }
-.radar-ping { transform-box: fill-box; transform-origin: center; animation: ping 1.8s ease-out infinite; }
-@keyframes ping { from { transform: scale(1); opacity: .55; } to { transform: scale(3); opacity: 0; } }
-.press { transition: transform .16s ease, opacity .16s ease; } .press:active { transform: scale(.97); opacity: .85; }
+.radar-ping { transform-box: fill-box; transform-origin: center; animation: ping 2s ease-out infinite; }
+@keyframes ping { from { transform: scale(1); opacity: .45; } to { transform: scale(2.6); opacity: 0; } }
 
-/* ---------- Movimiento ---------- */
-/* Cambio de pantalla: las pestañas se deslizan hacia su lado; entrar en algo avanza desde la derecha y volver regresa desde la izquierda. */
-:root { --ease-out: cubic-bezier(.2, .8, .2, 1); --ease-spring: cubic-bezier(.34, 1.45, .5, 1); }
-.nav-anim { animation: .34s var(--ease-out) backwards; }
+/* ---------- Movimiento: corto, suave y con sentido ---------- */
+:root { --ease-out: cubic-bezier(.22, .8, .24, 1); --ease-spring: cubic-bezier(.3, 1.25, .5, 1); }
+.press { transition: transform .14s var(--ease-out), background-color .2s ease, opacity .2s ease; }
+.press:active { transform: scale(.98); }
+@media (hover: hover) { .hoverable:hover { background: var(--surface); } .list .hoverable:hover { background: var(--sand); } }
+
+/* Cambio de pantalla: las pestañas se deslizan hacia su lado; entrar avanza desde la derecha y volver regresa. */
+.nav-anim { animation: .28s var(--ease-out) backwards; }
 .nav-right, .nav-forward { animation-name: in-right; }
 .nav-left, .nav-back { animation-name: in-left; }
 .nav-fade { animation-name: fade-in; }
-@keyframes in-right { from { opacity: 0; transform: translateX(34px); } }
-@keyframes in-left { from { opacity: 0; transform: translateX(-34px); } }
-@keyframes fade-in { from { opacity: 0; transform: translateY(8px); } }
-/* Con View Transitions la pantalla anterior sale mientras entra la nueva; la barra de pestañas se queda quieta. */
+@keyframes in-right { from { opacity: 0; transform: translateX(24px); } }
+@keyframes in-left { from { opacity: 0; transform: translateX(-24px); } }
+@keyframes fade-in { from { opacity: 0; transform: translateY(6px); } }
+.fade-in { animation: fade-in .25s var(--ease-out) both; }
 .vt .nav-anim { animation: none; }
 .tabbar { view-transition-name: tabbar; }
-::view-transition-group(root) { animation-duration: .36s; animation-timing-function: var(--ease-out); }
-::view-transition-old(root), ::view-transition-new(root) { animation-duration: .36s; animation-timing-function: var(--ease-out); }
+::view-transition-group(root) { animation-duration: .3s; animation-timing-function: var(--ease-out); }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .3s; animation-timing-function: var(--ease-out); }
 html[data-nav="right"]::view-transition-old(root), html[data-nav="forward"]::view-transition-old(root) { animation-name: out-left; }
 html[data-nav="right"]::view-transition-new(root), html[data-nav="forward"]::view-transition-new(root) { animation-name: in-right; }
 html[data-nav="left"]::view-transition-old(root), html[data-nav="back"]::view-transition-old(root) { animation-name: out-right; }
 html[data-nav="left"]::view-transition-new(root), html[data-nav="back"]::view-transition-new(root) { animation-name: in-left; }
-@keyframes out-left { to { opacity: 0; transform: translateX(-60px); } }
-@keyframes out-right { to { opacity: 0; transform: translateX(60px); } }
+@keyframes out-left { to { opacity: 0; transform: translateX(-32px); } }
+@keyframes out-right { to { opacity: 0; transform: translateX(32px); } }
+html[data-nav="theme"]::view-transition-old(root), html[data-nav="theme"]::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
 
-/* Barra de pestañas: una píldora que se desliza hasta la pestaña activa y un pequeño salto del icono. */
-.tab-pill { position: absolute; left: 0; top: .2rem; bottom: .05rem; width: 20%; transition: transform .45s var(--ease-spring); pointer-events: none; }
-.tab-pill span { display: block; margin: 0 auto; width: min(4.4rem, 94%); height: 100%; border-radius: 1.15rem; background: var(--sand); }
-.tab-pop { display: inline-block; animation: tab-pop .45s var(--ease-spring); }
-@keyframes tab-pop { 0% { transform: scale(.7) translateY(3px); } 60% { transform: scale(1.12) translateY(-2px); } 100% { transform: none; } }
+/* Barra de pestañas: una píldora que se desliza hasta la pestaña activa. */
+.tab-pill { position: absolute; left: 0; top: .3rem; bottom: .15rem; width: 20%; transition: transform .38s var(--ease-spring); pointer-events: none; }
+.tab-pill span { display: block; margin: 0 auto; width: min(4.25rem, 92%); height: 100%; border-radius: .9rem; background: var(--pop-soft); }
+.tab-pop { display: inline-block; animation: tab-pop .32s var(--ease-spring); }
+@keyframes tab-pop { from { transform: scale(.86); } }
 
-/* Al bajar, cada bloque aparece con suavidad; las tarjetas de noticias crecen al llegar al centro. */
+/* Al bajar, cada bloque entra con un desplazamiento corto. */
 @supports (animation-timeline: view()) {
-  .reveal { animation: reveal linear both; animation-timeline: view(); animation-range: entry 0% entry 55%; }
-  @keyframes reveal { from { opacity: 0; translate: 0 28px; scale: .97; } }
+  .reveal { animation: reveal linear both; animation-timeline: view(); animation-range: entry 0% entry 40%; }
+  @keyframes reveal { from { opacity: 0; translate: 0 16px; } }
   .snap-card { animation: card-focus linear both; animation-timeline: view(inline); animation-range: cover 0% cover 100%; }
-  @keyframes card-focus { 0%, 100% { scale: .93; opacity: .7; } 35%, 65% { scale: 1; opacity: 1; } }
+  @keyframes card-focus { 0%, 100% { opacity: .55; } 30%, 70% { opacity: 1; } }
 }
 /* Título pequeño en la barra superior cuando el grande sale de la vista. */
 .page-mini { opacity: 0; }
 .page-mini::after { content: attr(data-title); }
 @supports (animation-timeline: scroll()) {
-  .page-mini { animation: mini-title linear both; animation-timeline: scroll(root); animation-range: 40px 96px; }
-  @keyframes mini-title { from { opacity: 0; transform: translateY(calc(-50% + 8px)); } to { opacity: 1; transform: translateY(-50%); } }
-  .page-bar { animation: bar-line linear both; animation-timeline: scroll(root); animation-range: 0 60px; }
+  .page-mini { animation: mini-title linear both; animation-timeline: scroll(root); animation-range: 36px 84px; }
+  @keyframes mini-title { from { opacity: 0; transform: translateY(calc(-50% + 6px)); } to { opacity: 1; transform: translateY(-50%); } }
+  .page-bar { animation: bar-line linear both; animation-timeline: scroll(root); animation-range: 0 48px; }
   @keyframes bar-line { from { box-shadow: 0 1px 0 transparent; } to { box-shadow: 0 1px 0 var(--line); } }
 }
-/* La llama del logo arde despacio. */
-.flicker { transform-origin: 50% 100%; animation: flicker 3.4s ease-in-out infinite; }
-@keyframes flicker { 0%, 100% { transform: none; } 30% { transform: scale(1.03, .97) skewX(-2deg); } 62% { transform: scale(.98, 1.04) skewX(1.6deg); } }
-/* Las tarjetas responden al tocar y al pasar el ratón. */
-.tile { transition: transform .25s var(--ease-spring), box-shadow .25s ease; }
-@media (hover: hover) { .tile:hover { transform: translateY(-3px); box-shadow: 0 10px 24px -14px color-mix(in srgb, var(--pop) 45%, transparent); } }
-.tile:active { transform: scale(.97); }
-html[data-nav="theme"]::view-transition-old(root), html[data-nav="theme"]::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
-.theme-spin { display: grid; animation: theme-spin .5s var(--ease-spring); }
-@keyframes theme-spin { from { rotate: -90deg; scale: .5; opacity: 0; } }
-.medal-on { background: radial-gradient(circle at 30% 25%, #ffe27a, var(--sun) 45%, var(--flame)); color: #5a3a00; box-shadow: 0 8px 22px -10px var(--flame), inset 0 -4px 0 rgba(0,0,0,.08); }
-.medal-spin { animation: spin 14s linear infinite; }
+.flicker { }
+/* Tarjetas: borde que se marca y un desplazamiento mínimo al pasar el ratón. */
+.tile { transition: transform .2s var(--ease-out), border-color .2s ease, background-color .2s ease; }
+@media (hover: hover) { .tile:hover { transform: translateY(-1px); border-color: color-mix(in srgb, var(--ink) 18%, transparent); } }
+.tile:active { transform: scale(.985); }
+.theme-spin { display: grid; animation: theme-spin .4s var(--ease-out); }
+@keyframes theme-spin { from { rotate: -60deg; opacity: 0; } }
+.medal-on { background: var(--tile-sol); color: #8a5a00; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--sun) 55%, transparent); }
+.dark .medal-on { color: var(--sun); }
+.medal-spin { }
 @keyframes spin { to { rotate: 360deg; } }
-.confetti { position: absolute; inset: 0; pointer-events: none; }
-.confetti i { position: absolute; top: -10px; width: 8px; height: 14px; border-radius: 2px; animation: confetti 1.6s cubic-bezier(.2,.6,.4,1) both; }
-@keyframes confetti { from { translate: 0 0; rotate: 0deg; opacity: 1; } to { translate: 0 420px; rotate: 540deg; opacity: 0; } }
-.bottom-fade { background: linear-gradient(to bottom, transparent, var(--paper) 45%); }
-.sheet { animation: sheet .3s cubic-bezier(.2,.9,.2,1); }
-@keyframes sheet { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
-.slide { animation: slide .36s cubic-bezier(.2,.8,.2,1); }
-@keyframes slide { from { opacity: 0; transform: translateX(18px); } to { opacity: 1; transform: none; } }
-.pop { animation: pop .3s cubic-bezier(.3,1.5,.5,1); }
-@keyframes pop { from { transform: scale(.85); opacity: 0; } to { transform: none; opacity: 1; } }
-.pulse-soft { animation: pulse 1.6s ease-in-out infinite; } @keyframes pulse { 50% { opacity: .45; } }
-.bead { transition: transform .2s cubic-bezier(.3,1.7,.5,1), fill .15s; transform-box: fill-box; transform-origin: center; }
+.medal-in { animation: medal-in .6s var(--ease-spring) both; }
+@keyframes medal-in { from { scale: .6; opacity: 0; } }
+.ring-out { position: absolute; inset: 0; border-radius: 999px; box-shadow: 0 0 0 2px var(--sun); animation: ring-out 1.1s .2s var(--ease-out) both; }
+@keyframes ring-out { from { scale: 1; opacity: .8; } to { scale: 1.6; opacity: 0; } }
+.confetti { display: none; }
+.bottom-fade { background: linear-gradient(to bottom, transparent, var(--paper) 40%); }
+.sheet { animation: sheet .28s var(--ease-out); }
+@keyframes sheet { from { transform: translateY(12px); opacity: 0; } }
+.slide { animation: slide .3s var(--ease-out); }
+@keyframes slide { from { opacity: 0; transform: translateX(14px); } }
+.pop { animation: pop .3s var(--ease-out); }
+@keyframes pop { from { transform: scale(.96); opacity: 0; } }
+.rise { animation: rise .5s var(--ease-out) backwards; }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } }
+.bead { transition: transform .2s var(--ease-spring), fill .15s; transform-box: fill-box; transform-origin: center; }
+.cell-in { animation: cell-in .4s var(--ease-out) backwards; }
+@keyframes cell-in { from { opacity: 0; scale: .6; } }
+.grow-x { transform-origin: left; animation: grow-x .9s var(--ease-out) .1s backwards; }
+@keyframes grow-x { from { transform: scaleX(0); } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
+
+/* Bloque destacado (rosario, radar): tinta en claro, violeta profundo en oscuro. */
+.feature { background: var(--ink); color: var(--paper); }
+.feature-btn { background: var(--paper); color: var(--ink); }
+.dark .feature { background: #231d45; color: #f2f2f4; box-shadow: inset 0 0 0 1px #342c63; }
+.dark .feature-btn { background: #f2f2f4; color: #17142b; }
